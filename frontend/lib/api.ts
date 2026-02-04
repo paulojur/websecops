@@ -47,4 +47,30 @@ export const syncVulnerabilities = async () => {
     return response.data;
 }
 
+export const syncIntelligence = async () => {
+    const response = await api.post(`/intelligence/sync`);
+    return response.data;
+}
+
+// ZAP / Scan related
+export const startSpiderScan = async (url: string) => {
+    const response = await api.post(`/zap/spider`, null, { params: { target_url: url } });
+    return response.data;
+}
+
+export const startActiveScan = async (url: string) => {
+    const response = await api.post(`/zap/active`, null, { params: { target_url: url } });
+    return response.data;
+}
+
+export const checkScanStatus = async (type: string, id: string) => {
+    const response = await api.get(`/zap/status/${type}/${id}`);
+    return response.data;
+}
+
+export const getScanResults = async (url: string) => {
+    const response = await api.get(`/zap/results`, { params: { target_url: url } });
+    return response.data;
+}
+
 export default api;

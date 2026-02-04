@@ -13,18 +13,29 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
   redis:
     image: redis:alpine
     container_name: cyber_redis
     ports:
       - "6379:6379"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: cyber_backend
+    restart: always
     volumes:
       - ./backend:/app
     ports:
@@ -36,6 +47,11 @@ services:
       - db
       - redis
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   frontend:
     build:
@@ -51,6 +67,12 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
       - backend
+    # Frontend consumes a lot during dev, better run locally, but if running in docker:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   zap:
     image: zaproxy/zap-stable
@@ -60,6 +82,11 @@ services:
       - "8080:8080"
     volumes:
       - zap_data:/zap/wrk/
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
 volumes:
   postgres_data:

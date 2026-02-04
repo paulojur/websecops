@@ -32,6 +32,19 @@ export default function IntelligencePage() {
                     </h1>
                     <p className="text-gray-400 mt-2">Feed em tempo real de vulnerabilidades globais e notícias de segurança</p>
                 </div>
+                <button
+                    onClick={async () => {
+                        if (confirm('Atualizar feed agora? Isso pode levar alguns segundos.')) {
+                            try {
+                                await import('@/lib/api').then(m => m.syncIntelligence());
+                                window.location.reload();
+                            } catch (e) { alert('Erro ao sincronizar'); }
+                        }
+                    }}
+                    className="bg-cyber-accent/20 hover:bg-cyber-accent/30 text-cyber-accent border border-cyber-accent/50 px-4 py-2 rounded text-xs font-bold transition-colors uppercase tracking-wider"
+                >
+                    Forçar Atualização
+                </button>
             </header>
 
             <div className="grid grid-cols-1 gap-4">

@@ -28,9 +28,9 @@ def sync_intelligence(db: Session = Depends(get_db)):
     """
     Trigger manual Intelligence feed synchronization.
     """
-    from ...scrapers.feed import TheHackerNewsScraper, OwaspScraper
+    from ...scrapers.feed import TheHackerNewsScraper, OwaspScraper, CisaScraper, GoogleSecScraper
     
-    scrapers = [TheHackerNewsScraper(), OwaspScraper()]
+    scrapers = [TheHackerNewsScraper(), OwaspScraper(), CisaScraper(), GoogleSecScraper()]
     count = 0
     
     try:

@@ -7,6 +7,7 @@ import { LayoutDashboard, Target, ShieldAlert, Newspaper, Settings, Zap } from '
 const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { name: 'Meus Alvos', icon: Target, path: '/targets' },
+    { name: 'Centro de Scan', icon: Zap, path: '/scans' },
     { name: 'Vulnerabilidades', icon: ShieldAlert, path: '/vulns' },
     { name: 'Inteligência', icon: Newspaper, path: '/intelligence' },
 ];
@@ -34,8 +35,8 @@ export default function Sidebar() {
                             key={item.path}
                             href={item.path}
                             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${isActive
-                                    ? 'bg-cyber-primary/10 text-cyber-primary border border-cyber-primary/20 shadow-[0_0_15px_rgba(0,255,157,0.1)]'
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                ? 'bg-cyber-primary/10 text-cyber-primary border border-cyber-primary/20 shadow-[0_0_15px_rgba(0,255,157,0.1)]'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
                                 }`}
                         >
                             <item.icon className={`w-5 h-5 ${isActive ? 'text-cyber-primary' : 'text-gray-500 group-hover:text-white'}`} />
