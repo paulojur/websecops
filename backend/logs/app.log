@@ -61,3 +61,33 @@
 2026-02-05 15:54:34,593 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 5
 2026-02-05 15:56:38,476 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 6
 2026-02-05 16:02:57,407 - cyber_intel.services.zap_scanner - ERROR - Failed to start Active Scan: {'code': 'url_not_found', 'message': 'URL Not Found in the Scan Tree'}
+2026-02-05 16:49:17,664 - cyber_intel - INFO - Starting up CyberRisk Intel API...
+2026-02-05 16:49:17,745 - cyber_intel - INFO - Database tables created.
+2026-02-05 16:53:19,520 - cyber_intel - INFO - Starting up CyberRisk Intel API...
+2026-02-05 16:53:19,556 - cyber_intel - INFO - Database tables created.
+2026-02-05 16:54:07,514 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 7
+2026-02-05 16:54:28,911 - cyber_intel.services.zap_scanner - WARNING - Target http://192.168.1.199 not found in scan tree. Falling back to Spider.
+2026-02-05 16:54:28,917 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 8
+2026-02-05 17:12:52,434 - cyber_intel.services.zap_scanner - WARNING - Target http://192.168.1.199 not found in scan tree. Falling back to Spider.
+2026-02-05 17:12:52,442 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 9
+2026-02-05 17:15:53,930 - cyber_intel - INFO - Starting up CyberRisk Intel API...
+2026-02-05 17:15:54,003 - cyber_intel - INFO - Database tables created.
+2026-02-05 17:16:48,772 - cyber_intel - INFO - Starting up CyberRisk Intel API...
+2026-02-05 17:16:48,847 - cyber_intel - INFO - Database tables created.
+2026-02-05 17:17:18,952 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 10
+2026-02-05 17:19:13,322 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 11
+2026-02-05 17:21:49,838 - cyber_intel - INFO - Starting up CyberRisk Intel API...
+2026-02-05 17:21:49,875 - cyber_intel - INFO - Database tables created.
+2026-02-05 17:22:34,830 - cyber_intel - INFO - Starting up CyberRisk Intel API...
+2026-02-05 17:22:34,869 - cyber_intel - INFO - Database tables created.
+2026-02-05 17:23:10,702 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 12
+2026-02-05 17:23:35,634 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 13
+2026-02-05 17:23:52,703 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 14
+2026-02-05 17:24:09,430 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 15
+2026-02-05 17:29:17,266 - cyber_intel - INFO - Starting up CyberRisk Intel API...
+2026-02-05 17:29:17,341 - cyber_intel - INFO - Database tables created.
+2026-02-05 17:30:44,694 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 0
+2026-02-05 17:31:05,812 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 1
+2026-02-05 17:31:46,893 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 2
+2026-02-05 17:32:42,619 - cyber_intel.services.zap_scanner - INFO - Spider started with ID: 3
+2026-02-05 17:33:07,437 - cyber_intel.services.zap_scanner - INFO - Active Scan started with ID: 0
