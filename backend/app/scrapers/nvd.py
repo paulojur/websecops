@@ -28,21 +28,21 @@ class NVDScraper(BaseScraper):
         start_index = 0
         total_results = 1 # Initial dummy value to start loop
 
-        print(f"[*] Starting NVD collection (Window: 30 days)")
+        self.logger.info(f"[*] Starting NVD collection (Window: 30 days)")
 
         while start_index < total_results:
             params = base_params.copy()
             params["startIndex"] = start_index
             
             try:
-                print(f"[*] Requesting NVD API (startIndex={start_index})...")
+                self.logger.info(f"[*] Requesting NVD API (startIndex={start_index})...")
                 response = requests.get(self.base_url, params=params, headers=headers, timeout=60)
                 
                 if response.status_code == 200:
                     data = response.json()
                     total_results = data.get("totalResults", 0)
                     items = data.get("vulnerabilities", [])
-                    print(f"    [+] Got {len(items)} items. Total available: {total_results}")
+                    self.logger.info(f"    [+] Got {len(items)} items. Total available: {total_results}")
                     
                     if not items:
                         break
@@ -52,13 +52,13 @@ class NVDScraper(BaseScraper):
                     
                     # Safety break to avoid infinite loops if something weird happens
                     if len(all_vulnerabilities) > 10000:
-                        print("[!] Safety limit reached (10k items). Stopping.")
+                        self.logger.warning("[!] Safety limit reached (10k items). Stopping.")
                         break
                 else:
-                    print(f"[!] NVD API Error: {response.status_code}")
+                    self.logger.error(f"[!] NVD API Error: {response.status_code}")
                     break
             except Exception as e:
-                print(f"[!] Exception querying NVD: {e}")
+                self.logger.error(f"[!] Exception querying NVD: {e}")
                 break
         
         return all_vulnerabilities

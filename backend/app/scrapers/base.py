@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
+import logging
 
 class BaseScraper(ABC):
     def __init__(self, source_name: str):
         self.source_name = source_name
+        self.logger = logging.getLogger(f"cyber_intel.scrapers.{source_name}")
 
     @abstractmethod
     def fetch_data(self) -> List[Dict[str, Any]]:
@@ -24,11 +26,11 @@ class BaseScraper(ABC):
         """
         Main execution method.
         """
-        print(f"[*] Starting scraper for: {self.source_name}")
+        self.logger.info(f"[*] Starting scraper for: {self.source_name}")
         try:
             data = self.fetch_data()
-            print(f"[+] Successfully fetched {len(data)} items from {self.source_name}")
+            self.logger.info(f"[+] Successfully fetched {len(data)} items from {self.source_name}")
             return data
         except Exception as e:
-            print(f"[!] Error scrapping {self.source_name}: {e}")
+            self.logger.error(f"[!] Error scrapping {self.source_name}: {e}")
             return []

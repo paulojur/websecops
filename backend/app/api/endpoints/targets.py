@@ -36,10 +36,14 @@ def calculate_risk(db: Session, technologies: Dict[str, Any]) -> int:
     keywords = []
     # Extract keywords from tech stack values
     for key, value in technologies.items():
-        # Clean string (e.g., "Apache 2.4" -> "Apache")
-        clean_val = value.split(' ')[0]
-        if len(clean_val) > 3: # Avoid short words
-            keywords.append(clean_val)
+        # Generate multiple keywords for better matching
+        # 1. Full value (e.g. "Apache/2.4.49")
+        keywords.append(value)
+        
+        # 2. Base product (e.g. "Apache")
+        base_val = value.split('/')[0].split(' ')[0]
+        if len(base_val) > 3 and base_val != value:
+            keywords.append(base_val)
             
     if not keywords:
         return 0
@@ -111,8 +115,13 @@ def get_target_correlations(target_id: int, db: Session = Depends(get_db)):
         
     keywords = []
     for key, value in technologies.items():
-        clean_val = value.split(' ')[0]
-        if len(clean_val) > 3:
+        # Generate multiple keywords for better matching
+        # 1. Full value
+        keywords.append(value)
+        
+        # 2. Base product
+        clean_val = value.split('/')[0].split(' ')[0]
+        if len(clean_val) > 3 and clean_val != value:
             keywords.append(clean_val)
             
     if not keywords:

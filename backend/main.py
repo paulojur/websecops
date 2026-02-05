@@ -3,13 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import vulnerabilities, intelligence, zap, targets
 from app.core.database import engine, Base
 from app.models import models
+from app.core.logging_config import setup_logging
+
+logger = setup_logging()
 
 app = FastAPI(title="CyberRisk Intel API", version="0.1.0")
 
-# Create Database Tables on Startup
 @app.on_event("startup")
 def startup_event():
+    logger.info("Starting up CyberRisk Intel API...")
     Base.metadata.create_all(bind=engine)
+    logger.info("Database tables created.")
 
 app.add_middleware(
     CORSMiddleware,

@@ -2,9 +2,11 @@ import os
 import requests
 import time
 from typing import Dict, Any, Optional
+import logging
 
 class ZapScanner:
     def __init__(self):
+        self.logger = logging.getLogger("cyber_intel.services.zap_scanner")
         self.base_url = "http://zap:8080"
         self.api_key = "secret_api_key" 
         self.headers = {
@@ -26,10 +28,13 @@ class ZapScanner:
             data = resp.json()
             scan_id = data.get("scan")
             if not scan_id:
+                self.logger.error(f"Failed to start Spider: {data}")
                 return {"status": "error", "message": "Failed to start Spider", "raw": data}
             
+            self.logger.info(f"Spider started with ID: {scan_id}")
             return {"status": "started", "scan_id": scan_id, "type": "spider"}
         except Exception as e:
+            self.logger.error(f"Exception starting Spider: {e}")
             return {"status": "error", "message": str(e)}
 
     def start_active_scan(self, target_url: str) -> Dict[str, Any]:
@@ -47,10 +52,13 @@ class ZapScanner:
             data = resp.json()
             scan_id = data.get("scan")
             if not scan_id:
+                self.logger.error(f"Failed to start Active Scan: {data}")
                 return {"status": "error", "message": "Failed to start Active Scan", "raw": data}
             
+            self.logger.info(f"Active Scan started with ID: {scan_id}")
             return {"status": "started", "scan_id": scan_id, "type": "active_scan"}
         except Exception as e:
+            self.logger.error(f"Exception starting Active Scan: {e}")
             return {"status": "error", "message": str(e)}
 
     def get_progress(self, scan_id: str, scan_type: str = "spider") -> Dict[str, Any]:
@@ -105,43 +113,98 @@ class ZapScanner:
     def get_alerts(self, base_url: str) -> Dict[str, Any]:
         """
         Get all alerts for a target.
+        Handles protocol mismatches (http vs https) by checking ZAP's known sites if direct fetch fails.
         """
         try:
+            # 1. Try direct fetch
             resp = requests.get(
                 f"{self.base_url}/JSON/core/view/alerts/",
                 params={"baseurl": base_url, "apikey": self.api_key},
                 timeout=10
             )
-            return resp.json()
+            data = resp.json()
+            alerts = data.get("alerts", [])
+            
+            # 2. If no alerts, check if we have them under a slightly different URL (http vs https)
+            if not alerts:
+                # Get all sites ZAP knows about
+                sites_resp = requests.get(
+                    f"{self.base_url}/JSON/core/view/sites/",
+                    params={"apikey": self.api_key},
+                    timeout=5
+                )
+                sites = sites_resp.json().get("sites", [])
+                
+                # Normalize target URL for comparison (remove protocol and trailing slash)
+                target_domain = base_url.replace("http://", "").replace("https://", "").rstrip("/")
+                
+                # Find matching site in ZAP
+                matching_site = None
+                for site in sites:
+                    site_domain = site.replace("http://", "").replace("https://", "").rstrip("/")
+                    if site_domain == target_domain:
+                        matching_site = site
+                        break
+                
+                if matching_site and matching_site != base_url:
+                    print(f"[*] Redirect/Protocol mismatch detected. Fetching alerts for {matching_site} instead of {base_url}")
+                    resp = requests.get(
+                        f"{self.base_url}/JSON/core/view/alerts/",
+                        params={"baseurl": matching_site, "apikey": self.api_key},
+                        timeout=10
+                    )
+                    return resp.json()
+
+            return data
         except Exception as e:
             print(f"Error fetching alerts: {e}")
             return {"alerts": []}
 
     def get_full_report(self, base_url: str, alerts: list) -> Dict[str, Any]:
         """
-        Generates a PASS/FAIL report by comparing all active scan rules 
+        Generates a PASS/FAIL report by comparing all active AND passive scan rules 
         against found alerts.
         """
         try:
             alert_names = {a.get("alert") for a in alerts}
-            
-            # 2. Get all scanners (policies) that are enabled
-            scanners_resp = requests.get(
-                f"{self.base_url}/JSON/ascan/view/scanners/",
-                params={"apikey": self.api_key},
-                timeout=10
-            )
-            scanners = scanners_resp.json().get("scanners", [])
-            
             report = []
-            for scanner in scanners:
-                name = scanner.get("name")
-                status = "fail" if name in alert_names else "pass"
-                report.append({
-                    "name": name,
-                    "status": status,
-                    "cwe": scanner.get("cweId")
-                })
+            
+            # Helper to process scanners
+            def process_scanners(scanners_list, scan_type):
+                for scanner in scanners_list:
+                    name = scanner.get("name")
+                    # Check if this scanner alerted
+                    status = "fail" if name in alert_names else "pass"
+                    report.append({
+                        "name": name,
+                        "status": status,
+                        "cwe": scanner.get("cweId"),
+                        "type": scan_type
+                    })
+
+            # 1. Get Active Scanners
+            try:
+                scanners_resp = requests.get(
+                    f"{self.base_url}/JSON/ascan/view/scanners/",
+                    params={"apikey": self.api_key},
+                    timeout=10
+                )
+                active_scanners = scanners_resp.json().get("scanners", [])
+                process_scanners(active_scanners, "active")
+            except Exception as e:
+                self.logger.error(f"Failed to fetch active scanners: {e}")
+
+            # 2. Get Passive Scanners
+            try:
+                pscan_resp = requests.get(
+                    f"{self.base_url}/JSON/pscan/view/scanners/",
+                    params={"apikey": self.api_key},
+                    timeout=10
+                )
+                passive_scanners = pscan_resp.json().get("scanners", [])
+                process_scanners(passive_scanners, "passive")
+            except Exception as e:
+                self.logger.error(f"Failed to fetch passive scanners: {e}")
                 
             return {"coverage": report}
         except Exception as e:
