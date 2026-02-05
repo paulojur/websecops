@@ -60,32 +60,36 @@ def get_scan_results(target_url: str, db: Session = Depends(get_db)):
     alerts_list = alerts_data.get("alerts", [])
 
     # 2. Get Static CVEs from DB
-    target = db.query(Target).filter(Target.url == target_url).first()
-    if target and target.technologies:
-        keywords = []
-        for key, value in target.technologies.items():
-            keywords.append(value)
-            base_val = value.split('/')[0].split(' ')[0]
-            if len(base_val) > 3 and base_val != value:
-                keywords.append(base_val)
-        
-        if keywords:
-            query_filters = [Vulnerability.description.ilike(f"%{k}%") for k in keywords]
-            vulns = db.query(Vulnerability).filter(or_(*query_filters)).limit(100).all()
+    try:
+        target = db.query(Target).filter(Target.url == target_url).first()
+        if target and target.technologies:
+            keywords = []
+            for key, value in target.technologies.items():
+                keywords.append(value)
+                base_val = value.split('/')[0].split(' ')[0]
+                if len(base_val) > 3 and base_val != value:
+                    keywords.append(base_val)
             
-            # Map CVEs to ZAP Alert format
-            for v in vulns:
-                alerts_list.append({
-                    "alert": f"{v.cve_id}: {v.title}",
-                    "risk": v.severity.capitalize() if v.severity else "Medium",
-                    "confidence": "High", # Static detection is usually high confidence
-                    "description": v.description,
-                    "solution": "Update the affected component to a patched version.",
-                    "url": target_url,
-                    "cweid": "0", # Could map if we had CWE in DB
-                    "wascid": "0",
-                    "sourceid": "static_analysis"
-                })
+            if keywords:
+                query_filters = [Vulnerability.description.ilike(f"%{k}%") for k in keywords]
+                vulns = db.query(Vulnerability).filter(or_(*query_filters)).limit(100).all()
+                
+                # Map CVEs to ZAP Alert format
+                for v in vulns:
+                    alerts_list.append({
+                        "alert": f"{v.cve_id}: {v.title}",
+                        "risk": v.severity.capitalize() if v.severity else "Medium",
+                        "confidence": "High", # Static detection is usually high confidence
+                        "description": v.description,
+                        "solution": "Update the affected component to a patched version.",
+                        "url": target_url,
+                        "cweid": "0", # Could map if we had CWE in DB
+                        "wascid": "0",
+                        "sourceid": "static_analysis"
+                    })
+    except Exception as e:
+        print(f"Error accessing database during results merge: {e}")
+        # Proceed with just ZAP alerts
     
     # Update alerts in the response wrapper
     alerts_data["alerts"] = alerts_list

@@ -50,6 +50,12 @@ class ZapScanner:
                 params={"url": target_url, "apikey": self.api_key, "recurse": "true"}
             )
             data = resp.json()
+            
+            # Check for URL Not Found error (needs Spider first)
+            if data.get("code") == "url_not_found":
+                self.logger.warning(f"Target {target_url} not found in scan tree. active scan aborted.")
+                return {"status": "error", "message": "Target not crawled. Please run a Spider Scan (Passive) first."}
+
             scan_id = data.get("scan")
             if not scan_id:
                 self.logger.error(f"Failed to start Active Scan: {data}")
