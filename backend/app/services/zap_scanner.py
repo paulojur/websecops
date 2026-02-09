@@ -1,5 +1,7 @@
 import os
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import time
 from typing import Dict, Any, Optional
 import logging
@@ -7,12 +9,25 @@ import logging
 class ZapScanner:
     def __init__(self):
         self.logger = logging.getLogger("cyber_intel.services.zap_scanner")
-        self.base_url = "http://zap:8080"
+        self.base_url = os.getenv("ZAP_URL", "http://zap:8080")
         self.api_key = "secret_api_key" 
         self.headers = {
             "Content-Type": "application/json",
             "X-ZAP-API-Key": self.api_key
         }
+        
+        # Configure Retry Strategy
+        self.session = requests.Session()
+        retries = Retry(
+            total=3,
+            backoff_factor=0.5,
+            status_forcelist=[500, 502, 503, 504],
+            allowed_methods=["GET", "POST"] # Retry on these methods
+        )
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+        self.session.headers.update(self.headers)
 
     def start_spider(self, target_url: str) -> Dict[str, Any]:
         """
@@ -21,7 +36,7 @@ class ZapScanner:
         """
         try:
             print(f"[*] Starting ZAP Spider on {target_url}...")
-            resp = requests.get(
+            resp = self.session.get(
                 f"{self.base_url}/JSON/spider/action/scan/",
                 params={"url": target_url, "apikey": self.api_key}
             )
@@ -45,7 +60,7 @@ class ZapScanner:
         try:
             print(f"[*] Starting ZAP Active Scan on {target_url}...")
             # Ideally we check if spider is done first, but ZAP handles queueing or we handle it in orchestration
-            resp = requests.get(
+            resp = self.session.get(
                 f"{self.base_url}/JSON/ascan/action/scan/",
                 params={"url": target_url, "apikey": self.api_key, "recurse": "true"}
             )
@@ -76,7 +91,7 @@ class ZapScanner:
             endpoint = "spider" if scan_type == "spider" else "ascan"
             
             # 1. Get numeric status (0-100)
-            resp = requests.get(
+            resp = self.session.get(
                 f"{self.base_url}/JSON/{endpoint}/view/status/",
                 params={"scanId": scan_id, "apikey": self.api_key},
                 timeout=5
@@ -88,7 +103,7 @@ class ZapScanner:
             if scan_type == "ascan":
                 # Active scan has detailed progress per plugin
                 try:
-                    p_resp = requests.get(
+                    p_resp = self.session.get(
                          f"{self.base_url}/JSON/ascan/view/scanProgress/",
                          params={"scanId": scan_id, "apikey": self.api_key},
                          timeout=5
@@ -123,7 +138,7 @@ class ZapScanner:
         """
         try:
             # 1. Try direct fetch
-            resp = requests.get(
+            resp = self.session.get(
                 f"{self.base_url}/JSON/core/view/alerts/",
                 params={"baseurl": base_url, "apikey": self.api_key},
                 timeout=10
@@ -134,7 +149,7 @@ class ZapScanner:
             # 2. If no alerts, check if we have them under a slightly different URL (http vs https)
             if not alerts:
                 # Get all sites ZAP knows about
-                sites_resp = requests.get(
+                sites_resp = self.session.get(
                     f"{self.base_url}/JSON/core/view/sites/",
                     params={"apikey": self.api_key},
                     timeout=5
@@ -154,7 +169,7 @@ class ZapScanner:
                 
                 if matching_site and matching_site != base_url:
                     print(f"[*] Redirect/Protocol mismatch detected. Fetching alerts for {matching_site} instead of {base_url}")
-                    resp = requests.get(
+                    resp = self.session.get(
                         f"{self.base_url}/JSON/core/view/alerts/",
                         params={"baseurl": matching_site, "apikey": self.api_key},
                         timeout=10
@@ -190,7 +205,7 @@ class ZapScanner:
 
             # 1. Get Active Scanners
             try:
-                scanners_resp = requests.get(
+                scanners_resp = self.session.get(
                     f"{self.base_url}/JSON/ascan/view/scanners/",
                     params={"apikey": self.api_key},
                     timeout=10
@@ -202,7 +217,7 @@ class ZapScanner:
 
             # 2. Get Passive Scanners
             try:
-                pscan_resp = requests.get(
+                pscan_resp = self.session.get(
                     f"{self.base_url}/JSON/pscan/view/scanners/",
                     params={"apikey": self.api_key},
                     timeout=10

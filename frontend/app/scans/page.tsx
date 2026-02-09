@@ -14,6 +14,8 @@ export default function ScansPage() {
     const [riskFilter, setRiskFilter] = useState('ALL');
     const [viewMode, setViewMode] = useState<'alerts' | 'coverage'>('alerts');
 
+    const [sourceFilter, setSourceFilter] = useState<'ALL' | 'STATIC' | 'DYNAMIC'>('ALL');
+
     const addLog = (msg: string) => setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
 
     const handleScan = async (e: React.FormEvent) => {
@@ -95,8 +97,18 @@ export default function ScansPage() {
     };
 
     const filteredResults = results?.filter((alert: any) => {
-        if (riskFilter === 'ALL') return true;
-        return alert.risk.toUpperCase() === riskFilter;
+        // Filter by Risk
+        if (riskFilter !== 'ALL' && alert.risk.toUpperCase() !== riskFilter) return false;
+
+        // Filter by Source
+        if (sourceFilter === 'STATIC') {
+            return alert.sourceid === 'static_analysis';
+        }
+        if (sourceFilter === 'DYNAMIC') {
+            return alert.sourceid !== 'static_analysis';
+        }
+
+        return true;
     });
 
     return (
@@ -182,56 +194,99 @@ export default function ScansPage() {
                 </div>
 
                 <div className="lg:col-span-2 glass-panel p-6 rounded-lg flex flex-col min-h-0">
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="flex items-center gap-4">
-                            <h2 className="text-xl font-bold flex items-center gap-2 text-white">
-                                <ShieldCheck className="w-5 h-5 text-cyber-secondary" />
-                                {viewMode === 'alerts' ? 'Vulnerabilidades' : 'Relatório de Cobertura'}
-                            </h2>
-                            {results && (
-                                <div className="flex bg-white/5 rounded p-1">
-                                    <button
-                                        onClick={() => setViewMode('alerts')}
-                                        className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'alerts' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
-                                    >Alertas</button>
-                                    <button
-                                        onClick={() => setViewMode('coverage')}
-                                        className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'coverage' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
-                                    >Cobertura {coverage?.length > 0 && `(${coverage.length})`}</button>
+                    <div className="flex flex-col mb-6 gap-4">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <h2 className="text-xl font-bold flex items-center gap-2 text-white">
+                                    <ShieldCheck className="w-5 h-5 text-cyber-secondary" />
+                                    {viewMode === 'alerts' ? 'Vulnerabilidades' : 'Relatório de Cobertura'}
+                                </h2>
+                                {results && (
+                                    <div className="flex bg-white/5 rounded p-1">
+                                        <button
+                                            onClick={() => setViewMode('alerts')}
+                                            className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'alerts' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
+                                        >Alertas</button>
+                                        <button
+                                            onClick={() => setViewMode('coverage')}
+                                            className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'coverage' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
+                                        >Cobertura {coverage?.length > 0 && `(${coverage.length})`}</button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {scanStatus && (
+                                <div className="flex items-center gap-3">
+                                    <div className="text-right">
+                                        <p className="text-xs text-gray-400 uppercase">Progresso</p>
+                                        <p className="text-xl font-bold text-cyber-primary">{scanStatus.progress}%</p>
+                                    </div>
+                                    <div className="w-12 h-12 relative flex items-center justify-center">
+                                        <svg className="w-full h-full transform -rotate-90">
+                                            <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/10" />
+                                            <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-cyber-primary transition-all duration-500"
+                                                strokeDasharray={125.6} strokeDashoffset={125.6 - (125.6 * scanStatus.progress) / 100}
+                                            />
+                                        </svg>
+                                    </div>
                                 </div>
                             )}
                         </div>
 
+                        {/* Filters Row */}
                         {(viewMode === 'alerts' && results) && (
-                            <div className="flex gap-1">
-                                {['ALL', 'High', 'Medium', 'Low'].map(level => (
-                                    <button
-                                        key={level}
-                                        onClick={() => setRiskFilter(level === 'ALL' ? 'ALL' : level.toUpperCase())}
-                                        className={`px-3 py-1 rounded text-[10px] font-bold uppercase transition-colors border ${(riskFilter === level.toUpperCase() || (riskFilter === 'ALL' && level === 'ALL'))
-                                                ? 'bg-cyber-primary text-black border-cyber-primary'
-                                                : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'
-                                            }`}
-                                    >
-                                        {level}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        {scanStatus && (
-                            <div className="flex items-center gap-3">
-                                <div className="text-right">
-                                    <p className="text-xs text-gray-400 uppercase">Progresso</p>
-                                    <p className="text-xl font-bold text-cyber-primary">{scanStatus.progress}%</p>
+                            <div className="flex flex-wrap gap-4 items-center bg-white/5 p-3 rounded-lg border border-white/5">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] uppercase font-bold text-gray-500">Gravidade:</span>
+                                    <div className="flex gap-1">
+                                        {['ALL', 'High', 'Medium', 'Low'].map(level => (
+                                            <button
+                                                key={level}
+                                                onClick={() => setRiskFilter(level === 'ALL' ? 'ALL' : level.toUpperCase())}
+                                                className={`px-2 py-1 rounded text-[10px] font-bold uppercase transition-colors border ${(riskFilter === level.toUpperCase() || (riskFilter === 'ALL' && level === 'ALL'))
+                                                    ? 'bg-cyber-primary text-black border-cyber-primary'
+                                                    : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'
+                                                    }`}
+                                            >
+                                                {level}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="w-12 h-12 relative flex items-center justify-center">
-                                    <svg className="w-full h-full transform -rotate-90">
-                                        <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/10" />
-                                        <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-cyber-primary transition-all duration-500"
-                                            strokeDasharray={125.6} strokeDashoffset={125.6 - (125.6 * scanStatus.progress) / 100}
-                                        />
-                                    </svg>
+
+                                <div className="w-px h-4 bg-white/10 mx-2"></div>
+
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] uppercase font-bold text-gray-500">Origem:</span>
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={() => setSourceFilter('ALL')}
+                                            className={`px-2 py-1 rounded text-[10px] font-bold uppercase transition-colors border ${sourceFilter === 'ALL'
+                                                ? 'bg-cyber-secondary text-black border-cyber-secondary'
+                                                : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'
+                                                }`}
+                                        >
+                                            Todas
+                                        </button>
+                                        <button
+                                            onClick={() => setSourceFilter('STATIC')}
+                                            className={`px-2 py-1 rounded text-[10px] font-bold uppercase transition-colors border ${sourceFilter === 'STATIC'
+                                                ? 'bg-blue-400 text-black border-blue-400'
+                                                : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'
+                                                }`}
+                                        >
+                                            Estática (DB)
+                                        </button>
+                                        <button
+                                            onClick={() => setSourceFilter('DYNAMIC')}
+                                            className={`px-2 py-1 rounded text-[10px] font-bold uppercase transition-colors border ${sourceFilter === 'DYNAMIC'
+                                                ? 'bg-purple-400 text-black border-purple-400'
+                                                : 'bg-transparent text-gray-500 border-white/10 hover:border-white/30'
+                                                }`}
+                                        >
+                                            Dinâmica (ZAP)
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -253,16 +308,32 @@ export default function ScansPage() {
 
                         {viewMode === 'alerts' && filteredResults && filteredResults.map((alert: any, i: number) => (
                             <div key={i} className={`bg-white/5 border-l-4 p-4 rounded-r ${alert.risk === 'High' ? 'border-red-500' :
-                                    alert.risk === 'Medium' ? 'border-orange-500' :
-                                        alert.risk === 'Low' ? 'border-yellow-500' : 'border-blue-500'
+                                alert.risk === 'Medium' ? 'border-orange-500' :
+                                    alert.risk === 'Low' ? 'border-yellow-500' : 'border-blue-500'
                                 }`}>
                                 <div className="flex justify-between items-start">
-                                    <h3 className={`font-bold ${alert.risk === 'High' ? 'text-red-400' :
+                                    <div className="flex flex-col gap-1">
+                                        <h3 className={`font-bold ${alert.risk === 'High' ? 'text-red-400' :
                                             alert.risk === 'Medium' ? 'text-orange-400' : 'text-gray-200'
-                                        }`}>{alert.alert}</h3>
+                                            }`}>{alert.alert}</h3>
+
+                                        {/* Source Badge */}
+                                        <div className="flex gap-2 mt-1">
+                                            {alert.sourceid === 'static_analysis' ? (
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded border uppercase font-bold bg-blue-500/20 text-blue-400 border-blue-500/30 w-fit">
+                                                    Static Analysis
+                                                </span>
+                                            ) : (
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded border uppercase font-bold bg-purple-500/20 text-purple-400 border-purple-500/30 w-fit">
+                                                    ZAP Scanner
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
                                     <span className={`text-xs px-2 py-1 rounded border uppercase font-bold ${alert.risk === 'High' ? 'bg-red-500/20 text-red-500 border-red-500/30' :
-                                            alert.risk === 'Medium' ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' :
-                                                'bg-blue-500/20 text-blue-500 border-blue-500/30'
+                                        alert.risk === 'Medium' ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' :
+                                            'bg-blue-500/20 text-blue-500 border-blue-500/30'
                                         }`}>
                                         {alert.risk}
                                     </span>
@@ -306,3 +377,4 @@ export default function ScansPage() {
         </div>
     );
 }
+
