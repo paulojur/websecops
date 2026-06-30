@@ -1,0 +1,13 @@
+2026-02-04 13:12:57,367 - cyber_intel.scrapers.Cyber Press - INFO - [*] Starting scraper for: Cyber Press
+2026-02-04 13:12:58,679 - cyber_intel.scrapers.Cyber Press - INFO - [+] Successfully fetched 10 items from Cyber Press
+2026-02-04 13:12:58,679 - cyber_intel.scrapers.The Hacker News - INFO - [*] Starting scraper for: The Hacker News
+2026-02-04 13:12:59,158 - cyber_intel.scrapers.The Hacker News - INFO - [+] Successfully fetched 50 items from The Hacker News
+2026-02-04 13:12:59,158 - cyber_intel.scrapers.OWASP - INFO - [*] Starting scraper for: OWASP
+2026-02-04 13:12:59,602 - cyber_intel.scrapers.OWASP - INFO - [+] Successfully fetched 20 items from OWASP
+2026-02-04 13:12:59,602 - cyber_intel.scrapers.NVD - INFO - [*] Starting scraper for: NVD
+2026-02-04 13:12:59,602 - cyber_intel.scrapers.NVD - INFO - [*] Starting NVD collection (Window: 30 days)
+2026-02-04 13:12:59,602 - cyber_intel.scrapers.NVD - INFO - [*] Requesting NVD API (startIndex=0)...
+2026-02-04 13:13:08,231 - cyber_intel.scrapers.NVD - INFO -     [+] Got 2000 items. Total available: 3799
+2026-02-04 13:13:08,263 - cyber_intel.scrapers.NVD - INFO - [*] Requesting NVD API (startIndex=2000)...
+2026-02-04 13:13:20,102 - cyber_intel.scrapers.NVD - INFO -     [+] Got 1799 items. Total available: 3799
+2026-02-04 13:13:20,141 - cyber_intel.scrapers.NVD - INFO - [+] Successfully fetched 1596 items from NVD

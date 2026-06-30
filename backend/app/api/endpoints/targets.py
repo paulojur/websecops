@@ -5,12 +5,15 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from ...core.database import get_db
+from ...core.config import settings
 from ...models.models import Target, Vulnerability
 from ...services.tech_detector import TechDetector
+from ...services.cve_searcher import CVESearcher
 from sqlalchemy import or_
 
 router = APIRouter()
 detector = TechDetector()
+cve_searcher = CVESearcher(api_key=settings.NVD_API_KEY)
 
 class TargetCreate(BaseModel):
     url: str
@@ -28,30 +31,11 @@ class TargetResponse(BaseModel):
 
 def calculate_risk(db: Session, technologies: Dict[str, Any]) -> int:
     """
-    Search DB for CVEs related to detected technologies.
+    Search for CVEs related to detected technologies.
+    Now just returns 0 during initial scan to keep it fast. 
+    The real correlations are fetched on demand.
     """
-    if not technologies:
-        return 0
-    
-    keywords = []
-    # Extract keywords from tech stack values
-    for key, value in technologies.items():
-        # Generate multiple keywords for better matching
-        # 1. Full value (e.g. "Apache/2.4.49")
-        keywords.append(value)
-        
-        # 2. Base product (e.g. "Apache")
-        base_val = value.split('/')[0].split(' ')[0]
-        if len(base_val) > 3 and base_val != value:
-            keywords.append(base_val)
-            
-    if not keywords:
-        return 0
-        
-    # Build OR query
-    query_filters = [Vulnerability.description.ilike(f"%{k}%") for k in keywords]
-    count = db.query(Vulnerability).filter(or_(*query_filters)).count()
-    return count
+    return 0
 
 @router.post("/scan", response_model=TargetResponse)
 def add_and_scan_target(target_in: TargetCreate, db: Session = Depends(get_db)):
@@ -100,10 +84,11 @@ def get_targets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     for t in targets:
         t.potential_vulns = calculate_risk(db, t.technologies)
     return targets
-@router.get("/{target_id}/correlations", response_model=List[dict])
+@router.get("/{target_id}/correlations")
 def get_target_correlations(target_id: int, db: Session = Depends(get_db)):
     """
     Get list of CVEs correlated to the target's tech stack.
+    Fetches real-time data from NVD API.
     """
     target = db.query(Target).filter(Target.id == target_id).first()
     if not target:
@@ -111,36 +96,26 @@ def get_target_correlations(target_id: int, db: Session = Depends(get_db)):
         
     technologies = target.technologies
     if not technologies:
-        return []
+        return {"target": target, "correlations": []}
         
     keywords = []
     for key, value in technologies.items():
-        # Generate multiple keywords for better matching
-        # 1. Full value
+        # Prefer full exact version, if not fallback to just base tool
+        clean_val = value.split('/')[0].split(' ')[0]
+        
+        # We always add the full value to try to get exact version matches first
         keywords.append(value)
         
-        # 2. Base product
-        clean_val = value.split('/')[0].split(' ')[0]
         if len(clean_val) > 3 and clean_val != value:
-            keywords.append(clean_val)
+             keywords.append(clean_val)
             
     if not keywords:
-        return []
+        return {"target": target, "correlations": []}
         
-    query_filters = [Vulnerability.description.ilike(f"%{k}%") for k in keywords]
-    vulns = db.query(Vulnerability).filter(or_(*query_filters)).order_by(Vulnerability.published_date.desc()).limit(50).all()
+    # Real-time search
+    vulns = cve_searcher.search(keywords)
     
-    return [
-        {
-            "id": v.cve_id,
-            "title": v.title,
-            "description": v.description,
-            "severity": v.severity,
-            "published": v.published_date,
-            "matched_keyword": " | ".join([k for k in keywords if k.lower() in v.description.lower()])
-        }
-        for v in vulns
-    ]
+    return {"target": target, "correlations": vulns}
 
 @router.delete("/{target_id}", status_code=204)
 def delete_target(target_id: int, db: Session = Depends(get_db)):

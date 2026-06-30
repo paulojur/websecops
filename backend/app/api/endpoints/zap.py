@@ -16,8 +16,6 @@ def start_spider_scan(target_url: str):
     Safe for most targets.
     """
     result = scanner.start_spider(target_url)
-    if result.get("status") == "error":
-        raise HTTPException(status_code=500, detail=result.get("message"))
     return result
 
 @router.post("/active")
@@ -27,8 +25,6 @@ def start_active_scan(target_url: str):
     Use with caution.
     """
     result = scanner.start_active_scan(target_url)
-    if result.get("status") == "error":
-        raise HTTPException(status_code=500, detail=result.get("message"))
     return result
 
 @router.get("/status/{scan_type}/{scan_id}")
@@ -58,6 +54,7 @@ def get_scan_results(target_url: str, db: Session = Depends(get_db)):
     # 1. Get ZAP Alerts
     alerts_data = scanner.get_alerts(target_url)
     alerts_list = alerts_data.get("alerts", [])
+    print(f"[DEBUG] ZAP Returned {len(alerts_list)} alerts for {target_url}")
 
     # 2. Get Static CVEs from DB
     try:
