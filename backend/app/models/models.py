@@ -7,7 +7,8 @@ class Target(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String, unique=True, index=True, nullable=False)
-    technologies = Column(JSON, default={}) # e.g. {"server": "Nginx", "framework": "Django"}
+    technologies = Column(JSON, default={}) # e.g. {"Nginx": {"version": "1.18", "category": "Web Server"}}
+    subdomains = Column(JSON, default=[])
     vuln_status = Column(String, default="UNKNOWN") # SECURE, VULNERABLE, UNKNOWN
     last_scan = Column(DateTime(timezone=True), nullable=True)
     

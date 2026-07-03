@@ -1,10 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import datetime
 from ...core.database import get_db
 from ...models.models import Vulnerability
 
 router = APIRouter()
+
+def _parse_iso_date(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except Exception:
+        return None
 
 @router.get("/", response_model=List[dict])
 def read_vulnerabilities(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -38,6 +47,7 @@ def read_stats(db: Session = Depends(get_db)):
         "critical_count": critical,
         "high_count": high
     }
+
 @router.post("/sync")
 def sync_vulnerabilities(db: Session = Depends(get_db)):
     """
@@ -50,7 +60,6 @@ def sync_vulnerabilities(db: Session = Depends(get_db)):
         data = scraper.fetch_data()
         count = 0
         for item in data:
-            # Check if exists
             exists = db.query(Vulnerability).filter(Vulnerability.cve_id == item['id']).first()
             if not exists:
                 vuln = Vulnerability(
@@ -59,12 +68,36 @@ def sync_vulnerabilities(db: Session = Depends(get_db)):
                     description=item['description'],
                     severity=item['severity'],
                     score=item['score'],
-                    published_date=item['published_date'],
-                    last_modified_date=item['modified_date'],
+                    published_date=_parse_iso_date(item.get('published_date')),
+                    last_modified_date=_parse_iso_date(item.get('modified_date')),
                     source=item['source']
                 )
                 db.add(vuln)
                 count += 1
+            else:
+                updated = False
+                if exists.title != item['title']:
+                    exists.title = item['title']
+                    updated = True
+                if exists.description != item['description']:
+                    exists.description = item['description']
+                    updated = True
+                if exists.severity != item['severity']:
+                    exists.severity = item['severity']
+                    updated = True
+                if exists.score != item['score']:
+                    exists.score = item['score']
+                    updated = True
+                pub_date = _parse_iso_date(item.get('published_date'))
+                if pub_date and exists.published_date != pub_date:
+                    exists.published_date = pub_date
+                    updated = True
+                mod_date = _parse_iso_date(item.get('modified_date'))
+                if mod_date and exists.last_modified_date != mod_date:
+                    exists.last_modified_date = mod_date
+                    updated = True
+                if updated:
+                    count += 1
         
         db.commit()
         return {"status": "success", "added": count}

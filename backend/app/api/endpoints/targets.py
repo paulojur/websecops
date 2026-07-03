@@ -3,17 +3,20 @@ from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
+from urllib.parse import urlparse, urlunparse
+from sqlalchemy import or_
 
 from ...core.database import get_db
 from ...core.config import settings
 from ...models.models import Target, Vulnerability
 from ...services.tech_detector import TechDetector
 from ...services.cve_searcher import CVESearcher
-from sqlalchemy import or_
+from ...services.asm_recon import ASMRecon
 
 router = APIRouter()
 detector = TechDetector()
 cve_searcher = CVESearcher(api_key=settings.NVD_API_KEY)
+asm = ASMRecon()
 
 class TargetCreate(BaseModel):
     url: str
@@ -22,6 +25,7 @@ class TargetResponse(BaseModel):
     id: int
     url: str
     technologies: Dict[str, Any]
+    subdomains: List[str] = []
     vuln_status: str
     last_scan: datetime | None
     potential_vulns: int = 0
@@ -29,43 +33,104 @@ class TargetResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+def normalize_url(raw_url: str) -> str:
+    """Ensure the target URL has a scheme and valid host."""
+    value = (raw_url or "").strip()
+    if not value:
+        raise HTTPException(status_code=400, detail="URL is required")
+
+    if "://" not in value:
+        value = f"https://{value}"
+
+    parsed = urlparse(value)
+    if not parsed.scheme or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="Invalid URL")
+
+    return urlunparse(parsed)
+
+
 def calculate_risk(db: Session, technologies: Dict[str, Any]) -> int:
     """
-    Search for CVEs related to detected technologies.
-    Now just returns 0 during initial scan to keep it fast. 
-    The real correlations are fetched on demand.
+    Search for CVEs related to detected technologies using exact versions.
+    Counts candidate matches in the local vulnerability database.
     """
-    return 0
+    if not technologies:
+        return 0
+
+    filters = []
+    for tech_name, tech_info in technologies.items():
+        if not tech_name:
+            continue
+            
+        # The new format is {"WordPress": {"version": "6.4.2", "category": "CMS"}}
+        version = tech_info.get("version")
+        
+        # We search the exact phrase "WordPress 6.4" or "WordPress" if no version
+        if version:
+            # Try to build a more precise CPE-like string or just Name + Version
+            exact_match = f"{tech_name} {version}"
+            filters.append(Vulnerability.description.ilike(f"%{exact_match}%"))
+            # Also fallback to base name if version is very long/complex
+            clean_version = version.split('-')[0].split('.')[0]
+            if clean_version and clean_version != version:
+                 filters.append(Vulnerability.description.ilike(f"%{tech_name} {clean_version}%"))
+        else:
+            # Only if we really don't have a version, we fallback to just the name,
+            # but this increases false positives.
+            filters.append(Vulnerability.title.ilike(f"%{tech_name}%"))
+
+    if not filters:
+        return 0
+
+    try:
+        # Use or_ to count any matches for any of the detected technologies
+        return db.query(Vulnerability).filter(or_(*filters)).count()
+    except Exception as e:
+        print(f"Error calculating risk: {e}")
+        return 0
 
 @router.post("/scan", response_model=TargetResponse)
 def add_and_scan_target(target_in: TargetCreate, db: Session = Depends(get_db)):
     """
     Scans a new target URL (Passive) and saves/updates it in the database.
+    Falls back gracefully when Wappalyzer or subdomain discovery fails.
     """
-    # 1. Detect Technologies
-    tech_stack = detector.detect(target_in.url)
-    if "error" in tech_stack:
-        raise HTTPException(status_code=400, detail=tech_stack["error"])
+    normalized_url = normalize_url(target_in.url)
 
-    # 2. Update or Create in DB
+    # 1. Detect Technologies
+    tech_stack = detector.detect(normalized_url)
+    if "error" in tech_stack:
+        print(f"[!] Tech detection failed for {normalized_url}: {tech_stack['error']}")
+        tech_stack = {}
+
+    # 2. Subdomain Discovery (ASM)
+    try:
+        discovered_subdomains = asm.discover_subdomains(normalized_url)
+    except Exception as exc:
+        print(f"[!] Subdomain discovery failed for {normalized_url}: {exc}")
+        discovered_subdomains = []
+
+    # 3. Update or Create in DB
     risk_count = calculate_risk(db, tech_stack)
     status = "VULNERABLE" if risk_count > 0 else "SECURE"
 
-    existing = db.query(Target).filter(Target.url == target_in.url).first()
-    
+    existing = db.query(Target).filter(Target.url == normalized_url).first()
+
     if existing:
         existing.technologies = tech_stack
+        existing.subdomains = discovered_subdomains
         existing.last_scan = datetime.utcnow()
         existing.vuln_status = status
         db.commit()
         db.refresh(existing)
-        # Inject dynamic field
         existing.potential_vulns = risk_count
         return existing
     else:
         new_target = Target(
-            url=target_in.url,
+            url=normalized_url,
             technologies=tech_stack,
+            subdomains=discovered_subdomains,
             vuln_status=status,
             last_scan=datetime.utcnow()
         )
@@ -84,6 +149,7 @@ def get_targets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     for t in targets:
         t.potential_vulns = calculate_risk(db, t.technologies)
     return targets
+
 @router.get("/{target_id}/correlations")
 def get_target_correlations(target_id: int, db: Session = Depends(get_db)):
     """
@@ -99,15 +165,14 @@ def get_target_correlations(target_id: int, db: Session = Depends(get_db)):
         return {"target": target, "correlations": []}
         
     keywords = []
-    for key, value in technologies.items():
-        # Prefer full exact version, if not fallback to just base tool
-        clean_val = value.split('/')[0].split(' ')[0]
-        
-        # We always add the full value to try to get exact version matches first
-        keywords.append(value)
-        
-        if len(clean_val) > 3 and clean_val != value:
-             keywords.append(clean_val)
+    for tech_name, tech_info in technologies.items():
+        version = tech_info.get("version")
+        if version:
+             keywords.append(f"{tech_name} {version}")
+             # Also add base name in case exact version yields nothing
+             keywords.append(tech_name)
+        else:
+             keywords.append(tech_name)
             
     if not keywords:
         return {"target": target, "correlations": []}

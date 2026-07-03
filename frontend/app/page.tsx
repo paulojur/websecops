@@ -66,7 +66,7 @@ export default function Home() {
     setLoadingCorrelations(true);
     try {
       const data = await getTargetCorrelations(target.id);
-      setCorrelations(data);
+      setCorrelations(Array.isArray(data.correlations) ? data.correlations : []);
     } catch (e) {
       console.error("Failed to load correlations", e);
     } finally {
@@ -105,7 +105,7 @@ export default function Home() {
     }
   }
 
-  const filteredCorrelations = correlations.filter((c: any) => {
+  const filteredCorrelations = (correlations || []).filter((c: any) => {
     if (!riskFilter) return true;
     const search = riskFilter.toLowerCase();
     return (
@@ -300,12 +300,19 @@ export default function Home() {
                   )}
 
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {Object.entries(t.technologies).map(([k, v]: any) => (
-                      <span key={k} className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-gray-300 border border-white/5">
-                        <b className="text-white">{k}:</b> {v}
-                      </span>
-                    ))}
-                    {Object.keys(t.technologies).length === 0 && (
+                    {Object.entries(t.technologies || {}).map(([k, v]: any) => {
+                      const detail = typeof v === 'object' && v !== null
+                        ? [v.version, v.category].filter(Boolean).join(' · ')
+                        : String(v ?? '');
+
+                      return (
+                        <span key={k} className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-gray-300 border border-white/5">
+                          <b className="text-white">{k}</b>
+                          {detail ? ` · ${detail}` : ''}
+                        </span>
+                      );
+                    })}
+                    {Object.keys(t.technologies || {}).length === 0 && (
                       <span className="text-xs text-gray-500 italic">No technologies detected</span>
                     )}
                   </div>

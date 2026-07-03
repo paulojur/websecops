@@ -1,67 +1,98 @@
 import requests
 from typing import List, Dict, Any
 from .base import BaseScraper
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 class NVDScraper(BaseScraper):
     def __init__(self, api_key: str = None):
         super().__init__("NVD")
         self.base_url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
         self.api_key = api_key
+        self.session = requests.Session()
+        self.session.headers.update({
+            "User-Agent": "Mozilla/5.0 (compatible; CyberIntel/1.0; +https://example.com)",
+            "Accept": "application/json"
+        })
+        retries = Retry(
+            total=5,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET"]
+        )
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
 
-    def fetch_data(self) -> List[Dict[str, Any]]:
-        # Fetch data modified in the last 10 days
+    def _build_date_iso(self, dt: datetime) -> str:
+        return dt.replace(tzinfo=timezone.utc).isoformat()
+
+    def _collect_vulnerabilities(self, window_days: int) -> List[Dict[str, Any]]:
         now = datetime.utcnow()
-        yesterday = now - timedelta(days=10)
-        
+        start_date = now - timedelta(days=window_days)
         base_params = {
-            "lastModStartDate": yesterday.isoformat(),
-            "lastModEndDate": now.isoformat(),
-            "resultsPerPage": 2000
+            "lastModStartDate": self._build_date_iso(start_date),
+            "lastModEndDate": self._build_date_iso(now),
+            "resultsPerPage": 200,
         }
-        
-        headers = {}
+
         if self.api_key:
-            headers["apiKey"] = self.api_key
+            base_params["apiKey"] = self.api_key
 
         all_vulnerabilities = []
+        seen_ids = set()
         start_index = 0
-        total_results = 1 # Initial dummy value to start loop
+        total_results = 1
 
-        self.logger.info(f"[*] Starting NVD collection (Window: 30 days)")
+        self.logger.info(f"[*] Requesting NVD API for the past {window_days} days")
 
         while start_index < total_results:
-            params = base_params.copy()
-            params["startIndex"] = start_index
-            
+            params = {**base_params, "startIndex": start_index}
             try:
                 self.logger.info(f"[*] Requesting NVD API (startIndex={start_index})...")
-                response = requests.get(self.base_url, params=params, headers=headers, timeout=60)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    total_results = data.get("totalResults", 0)
-                    items = data.get("vulnerabilities", [])
-                    self.logger.info(f"    [+] Got {len(items)} items. Total available: {total_results}")
-                    
-                    if not items:
-                        break
-                        
-                    all_vulnerabilities.extend(self.parse_data(items))
-                    start_index += len(items)
-                    
-                    # Safety break to avoid infinite loops if something weird happens
-                    if len(all_vulnerabilities) > 10000:
-                        self.logger.warning("[!] Safety limit reached (10k items). Stopping.")
-                        break
-                else:
-                    self.logger.error(f"[!] NVD API Error: {response.status_code}")
+                response = self.session.get(self.base_url, params=params, timeout=90)
+                response.raise_for_status()
+
+                data = response.json()
+                total_results = data.get("totalResults", 0)
+                items = data.get("vulnerabilities", [])
+                self.logger.info(f"    [+] Got {len(items)} items. Total available: {total_results}")
+
+                if not items:
                     break
-            except Exception as e:
+
+                parsed = self.parse_data(items)
+                for item in parsed:
+                    if item["id"] not in seen_ids:
+                        seen_ids.add(item["id"])
+                        all_vulnerabilities.append(item)
+
+                start_index += len(items)
+                if len(all_vulnerabilities) >= 2000:
+                    self.logger.info("[!] Reached item limit of 2000. Stopping early.")
+                    break
+            except requests.exceptions.RequestException as e:
                 self.logger.error(f"[!] Exception querying NVD: {e}")
                 break
-        
+            except ValueError as e:
+                self.logger.error(f"[!] JSON decode failed: {e}")
+                break
+
         return all_vulnerabilities
+
+    def fetch_data(self) -> List[Dict[str, Any]]:
+        vulnerabilities = self._collect_vulnerabilities(window_days=2)
+
+        if len(vulnerabilities) < 100:
+            self.logger.warning("[!] Fewer than 100 CVEs returned for 2 days. Expanding window to 7 days.")
+            vulnerabilities = self._collect_vulnerabilities(window_days=7)
+
+        if len(vulnerabilities) < 100:
+            self.logger.warning("[!] Fewer than 100 CVEs returned for 7 days. Expanding window to 30 days.")
+            vulnerabilities = self._collect_vulnerabilities(window_days=30)
+
+        return vulnerabilities
 
     def parse_data(self, raw_data: Any) -> List[Dict[str, Any]]:
         normalized = []

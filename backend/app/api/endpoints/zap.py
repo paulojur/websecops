@@ -60,16 +60,23 @@ def get_scan_results(target_url: str, db: Session = Depends(get_db)):
     try:
         target = db.query(Target).filter(Target.url == target_url).first()
         if target and target.technologies:
-            keywords = []
-            for key, value in target.technologies.items():
-                keywords.append(value)
-                base_val = value.split('/')[0].split(' ')[0]
-                if len(base_val) > 3 and base_val != value:
-                    keywords.append(base_val)
+            filters = []
+            for tech_name, tech_info in target.technologies.items():
+                if not tech_name:
+                    continue
+                version = tech_info.get("version")
+                if version:
+                    exact_match = f"{tech_name} {version}"
+                    filters.append(Vulnerability.description.ilike(f"%{exact_match}%"))
+                    clean_version = version.split('-')[0].split('.')[0]
+                    if clean_version and clean_version != version:
+                        filters.append(Vulnerability.description.ilike(f"%{tech_name} {clean_version}%"))
+                else:
+                    filters.append(Vulnerability.title.ilike(f"%{tech_name}%"))
             
-            if keywords:
-                query_filters = [Vulnerability.description.ilike(f"%{k}%") for k in keywords]
-                vulns = db.query(Vulnerability).filter(or_(*query_filters)).limit(100).all()
+            if filters:
+                # Need to import or_ if it's not already (it is imported at top)
+                vulns = db.query(Vulnerability).filter(or_(*filters)).limit(100).all()
                 
                 # Map CVEs to ZAP Alert format
                 for v in vulns:

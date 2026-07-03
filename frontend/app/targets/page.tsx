@@ -89,11 +89,14 @@ export default function TargetsPage() {
                         <p className="text-xs text-gray-500 mb-4">Adicionado em: {new Date(t.created_at || Date.now()).toLocaleDateString()}</p>
 
                         <div className="flex flex-wrap gap-2 mb-4">
-                            {Object.entries(t.technologies || {}).slice(0, 3).map(([k, v]: any) => (
-                                <span key={k} className="text-[10px] bg-black/40 px-2 py-1 rounded text-gray-400 border border-white/5">
-                                    {k}: {v}
-                                </span>
-                            ))}
+                            {Object.entries(t.technologies || {}).slice(0, 3).map(([k, v]: any) => {
+                                const version = typeof v === 'object' && v.version ? ` v${v.version}` : '';
+                                return (
+                                    <span key={k} className="text-[10px] bg-black/40 px-2 py-1 rounded text-gray-400 border border-white/5">
+                                        {k}{version}
+                                    </span>
+                                );
+                            })}
                         </div>
 
                         <div className="flex gap-2 mt-auto pt-4 border-t border-white/5">

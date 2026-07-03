@@ -62,6 +62,15 @@ export default function TargetDetailsPage() {
 
     const { target, correlations } = data;
 
+    const formatTechnologyValue = (value: any) => {
+        if (typeof value === 'object' && value !== null) {
+            const parts = [value.version, value.category].filter(Boolean);
+            return parts.join(' · ');
+        }
+
+        return String(value ?? '');
+    };
+
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Header */}
@@ -83,12 +92,16 @@ export default function TargetDetailsPage() {
             <div className="bg-black/40 border border-white/10 p-6 rounded-lg">
                 <h2 className="text-xl font-bold text-white mb-4">Tecnologias Detectadas</h2>
                 <div className="flex flex-wrap gap-3">
-                    {Object.entries(target.technologies || {}).map(([key, val]: any) => (
-                        <div key={key} className="bg-white/5 px-4 py-2 rounded border border-white/10 flex items-center gap-2">
-                            <span className="text-gray-400 text-sm">{key}:</span>
-                            <span className="text-cyber-secondary font-bold">{val}</span>
-                        </div>
-                    ))}
+                    {Object.entries(target.technologies || {}).map(([key, val]: any) => {
+                        const displayValue = formatTechnologyValue(val);
+
+                        return (
+                            <div key={key} className="bg-white/5 px-4 py-2 rounded border border-white/10 flex items-center gap-2">
+                                <span className="text-gray-400 text-sm">{key}:</span>
+                                <span className="text-cyber-secondary font-bold">{displayValue || 'Sem detalhes'}</span>
+                            </div>
+                        );
+                    })}
                     {Object.keys(target.technologies || {}).length === 0 && (
                         <p className="text-gray-500 italic">Nenhuma tecnologia identificada.</p>
                     )}

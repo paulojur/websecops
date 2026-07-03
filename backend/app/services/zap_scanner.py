@@ -6,28 +6,61 @@ import time
 from typing import Dict, Any, Optional
 import logging
 
+from app.core.config import settings
+
 class ZapScanner:
     def __init__(self):
         self.logger = logging.getLogger("cyber_intel.services.zap_scanner")
-        self.base_url = os.getenv("ZAP_URL", "http://zap:8080")
-        self.api_key = "secret_api_key" 
+        self.base_url = self._resolve_base_url()
+        self.api_key = settings.ZAP_API_KEY
         self.headers = {
-            "Content-Type": "application/json",
-            "X-ZAP-API-Key": self.api_key
+            "Content-Type": "application/json"
         }
-        
+        if self.api_key:
+            self.headers["X-ZAP-API-Key"] = self.api_key
+
         # Configure Retry Strategy
         self.session = requests.Session()
         retries = Retry(
             total=3,
             backoff_factor=0.5,
             status_forcelist=[500, 502, 503, 504],
-            allowed_methods=["GET", "POST"] # Retry on these methods
+            allowed_methods=["GET", "POST"]
         )
         adapter = HTTPAdapter(max_retries=retries)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
         self.session.headers.update(self.headers)
+
+    def _probe_zap(self, url: str) -> bool:
+        try:
+            resp = requests.get(
+                f"{url.rstrip('/')}/JSON/core/view/version/",
+                timeout=2,
+                headers={"Content-Type": "application/json"}
+            )
+            return resp.status_code == 200 and "version" in resp.json()
+        except Exception:
+            return False
+
+    def _resolve_base_url(self) -> str:
+        configured = os.getenv("ZAP_URL") or settings.ZAP_URL
+        if configured:
+            configured = configured.rstrip("/")
+            if self._probe_zap(configured):
+                return configured
+            self.logger.warning(f"Configured ZAP_URL {configured} is unreachable.")
+
+        candidates = ["http://zap:8080", "http://localhost:8080"]
+        for candidate in candidates:
+            if candidate == configured:
+                continue
+            if self._probe_zap(candidate):
+                self.logger.info(f"Using fallback ZAP URL: {candidate}")
+                return candidate
+
+        self.logger.warning("Could not reach OWASP ZAP on default endpoints. Falling back to configured URL.")
+        return configured or "http://zap:8080"
 
     def start_spider(self, target_url: str) -> Dict[str, Any]:
         """
