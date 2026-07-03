@@ -2,9 +2,57 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ShieldAlert, ArrowLeft, Loader2, AlertTriangle, ExternalLink } from 'lucide-react';
+import { ShieldAlert, ArrowLeft, Loader2, AlertTriangle, ExternalLink, ClipboardList, Wrench } from 'lucide-react';
 import { getTargetCorrelations } from '@/lib/api';
 import Link from 'next/link';
+
+type TechnologyInfo = {
+    version?: string;
+    category?: string;
+};
+
+type Remediation = {
+    title: string;
+    severity: string;
+    confidence: string;
+    category: string;
+    evidence: string;
+    why_it_matters: string;
+    recommendation: string;
+    snippets?: {
+        nginx?: string;
+        apache?: string;
+    };
+    report_text: string;
+};
+
+type Correlation = {
+    cve_id: string;
+    description: string;
+    correlation_reason?: string;
+    remediation?: Remediation;
+};
+
+type SummaryItem = {
+    id: string;
+    severity: string;
+    score?: number;
+    reason: string;
+};
+
+type TargetDetailsData = {
+    target: {
+        url: string;
+        created_at?: string;
+        technologies?: Record<string, TechnologyInfo | string>;
+    };
+    correlations: Correlation[];
+    hardening?: Remediation[];
+    summary?: {
+        total: number;
+        top_risks: SummaryItem[];
+    };
+};
 
 export default function TargetDetailsPage() {
     const params = useParams();
@@ -13,7 +61,7 @@ export default function TargetDetailsPage() {
     
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<TargetDetailsData | null>(null);
 
     useEffect(() => {
         if (!id) return;
@@ -23,8 +71,8 @@ export default function TargetDetailsPage() {
                 setLoading(true);
                 const result = await getTargetCorrelations(parseInt(id));
                 setData(result);
-            } catch (err: any) {
-                setError(err.message || 'Erro ao carregar detalhes do alvo.');
+            } catch (err: unknown) {
+                setError(err instanceof Error ? err.message : 'Erro ao carregar detalhes do alvo.');
             } finally {
                 setLoading(false);
             }
@@ -61,8 +109,10 @@ export default function TargetDetailsPage() {
     if (!data) return null;
 
     const { target, correlations } = data;
+    const hardening = data.hardening || [];
+    const summary = data.summary || { total: correlations.length, top_risks: [] };
 
-    const formatTechnologyValue = (value: any) => {
+    const formatTechnologyValue = (value: TechnologyInfo | string) => {
         if (typeof value === 'object' && value !== null) {
             const parts = [value.version, value.category].filter(Boolean);
             return parts.join(' · ');
@@ -82,9 +132,11 @@ export default function TargetDetailsPage() {
                     <h1 className="text-3xl font-black text-white flex items-center gap-3">
                         ALVO: <span className="text-cyber-primary">{target.url}</span>
                     </h1>
-                    <p className="text-gray-400 mt-1">
-                        Adicionado em {new Date(target.created_at).toLocaleString()}
-                    </p>
+                    {target.created_at && (
+                        <p className="text-gray-400 mt-1">
+                            Adicionado em {new Date(target.created_at).toLocaleString()}
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -92,7 +144,7 @@ export default function TargetDetailsPage() {
             <div className="bg-black/40 border border-white/10 p-6 rounded-lg">
                 <h2 className="text-xl font-bold text-white mb-4">Tecnologias Detectadas</h2>
                 <div className="flex flex-wrap gap-3">
-                    {Object.entries(target.technologies || {}).map(([key, val]: any) => {
+                    {Object.entries(target.technologies || {}).map(([key, val]) => {
                         const displayValue = formatTechnologyValue(val);
 
                         return (
@@ -112,8 +164,24 @@ export default function TargetDetailsPage() {
             <div>
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
                     <ShieldAlert className="w-6 h-6 text-cyber-primary" />
-                    Correlações CVE em Tempo Real ({correlations.length})
+                    Riscos Priorizados ({summary.total})
                 </h2>
+
+                {summary.top_risks?.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                        {summary.top_risks.map((item) => (
+                            <div key={item.id} className="bg-white/5 border border-white/10 rounded-lg p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-cyber-primary font-bold">{item.id}</span>
+                                    <span className="text-xs px-2 py-1 rounded border border-red-500/30 text-red-300 bg-red-500/10">
+                                        {item.severity} {item.score ? `CVSS ${item.score}` : ''}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-2">{item.reason}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
                 
                 {correlations.length === 0 ? (
                     <div className="bg-white/5 p-8 rounded-lg text-center border border-white/10">
@@ -121,7 +189,7 @@ export default function TargetDetailsPage() {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {correlations.map((vuln: any, index: number) => (
+                        {correlations.map((vuln, index) => (
                             <div key={index} className="bg-black/40 border-l-4 border-cyber-primary p-6 rounded-r-lg hover:bg-white/5 transition-colors">
                                 <div className="flex justify-between items-start mb-2">
                                     <h3 className="text-xl font-bold text-cyber-primary flex items-center gap-2">
@@ -131,12 +199,64 @@ export default function TargetDetailsPage() {
                                         </a>
                                     </h3>
                                 </div>
+                                <p className="text-xs text-gray-500 mb-3">{vuln.correlation_reason}</p>
                                 <p className="text-gray-300 mb-4 leading-relaxed">{vuln.description}</p>
+
+                                {vuln.remediation && (
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                                        <div className="bg-white/5 border border-white/10 rounded p-4">
+                                            <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                                                <Wrench className="w-4 h-4 text-cyber-secondary" />
+                                                Como corrigir
+                                            </h4>
+                                            <p className="text-sm text-gray-300">{vuln.remediation.recommendation}</p>
+                                            <p className="text-xs text-gray-500 mt-2">{vuln.remediation.why_it_matters}</p>
+                                        </div>
+                                        <div className="bg-black/50 border border-white/10 rounded p-4">
+                                            <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                                                <ClipboardList className="w-4 h-4 text-cyber-primary" />
+                                                Texto para relatório
+                                            </h4>
+                                            <p className="text-xs text-gray-300 leading-relaxed">{vuln.remediation.report_text}</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
                 )}
             </div>
+
+            {/* Hardening */}
+            {hardening.length > 0 && (
+                <div className="bg-black/40 border border-white/10 p-6 rounded-lg">
+                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <Wrench className="w-5 h-5 text-cyber-secondary" />
+                        Hardening recomendado
+                    </h2>
+                    <div className="space-y-4">
+                        {hardening.map((item, index) => (
+                            <div key={index} className="bg-white/5 border border-white/10 rounded p-4">
+                                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                                    <h3 className="font-bold text-cyber-secondary">{item.title}</h3>
+                                    <span className="text-[10px] uppercase text-gray-400 border border-white/10 rounded px-2 py-1">
+                                        {item.category} · {item.confidence}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-300 mb-3">{item.recommendation}</p>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                    {item.snippets?.nginx && (
+                                        <pre className="bg-black/50 border border-white/10 rounded p-3 text-xs text-gray-300 overflow-x-auto"><code>{item.snippets.nginx}</code></pre>
+                                    )}
+                                    {item.snippets?.apache && (
+                                        <pre className="bg-black/50 border border-white/10 rounded p-3 text-xs text-gray-300 overflow-x-auto"><code>{item.snippets.apache}</code></pre>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

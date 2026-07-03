@@ -1,16 +1,53 @@
 'use client';
 
-import { Zap, Play, Activity, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Zap, Play, Activity, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { startSpiderScan, startActiveScan, checkScanStatus, getScanResults } from '@/lib/api';
+
+type ScanStatus = {
+    status: 'starting' | 'scanning' | 'completed';
+    progress: number;
+    id?: string;
+    type?: string;
+};
+
+type AlertRemediation = {
+    title: string;
+    category: string;
+    confidence: string;
+    evidence: string;
+    recommendation: string;
+    report_text: string;
+    snippets?: {
+        nginx?: string;
+        apache?: string;
+    };
+};
+
+type ScanAlert = {
+    alert: string;
+    risk: string;
+    confidence?: string;
+    description?: string;
+    method?: string;
+    url?: string;
+    sourceid?: string;
+    remediations?: AlertRemediation[];
+};
+
+type CoverageItem = {
+    name: string;
+    status: 'pass' | 'fail';
+    cwe?: string;
+};
 
 export default function ScansPage() {
     const [targetUrl, setTargetUrl] = useState('');
     const [scanType, setScanType] = useState('spider');
-    const [scanStatus, setScanStatus] = useState<any>(null);
+    const [scanStatus, setScanStatus] = useState<ScanStatus | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
-    const [results, setResults] = useState<any>(null);
-    const [coverage, setCoverage] = useState<any>(null);
+    const [results, setResults] = useState<ScanAlert[] | null>(null);
+    const [coverage, setCoverage] = useState<CoverageItem[] | null>(null);
     const [riskFilter, setRiskFilter] = useState('ALL');
     const [viewMode, setViewMode] = useState<'alerts' | 'coverage'>('alerts');
 
@@ -48,8 +85,9 @@ export default function ScansPage() {
                 addLog(`Erro ao iniciar: ${data.message}`);
                 setScanStatus(null);
             }
-        } catch (error: any) {
-            addLog(`Erro de conexão: ${error.message}`);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'erro desconhecido';
+            addLog(`Erro de conexão: ${message}`);
             setScanStatus(null);
         }
     };
@@ -58,7 +96,7 @@ export default function ScansPage() {
         const interval = setInterval(async () => {
             try {
                 const data = await checkScanStatus(type, id);
-                setScanStatus((prev: any) => ({ ...prev, progress: data.progress }));
+                setScanStatus((prev) => prev ? { ...prev, progress: data.progress } : prev);
 
                 // Show real-time activity in logs
                 if (data.details && !logs.includes(`[${new Date().toLocaleTimeString()}] ${data.details}`)) {
@@ -74,7 +112,7 @@ export default function ScansPage() {
                 if (data.status === 'completed' || data.progress >= 100) {
                     clearInterval(interval);
                     addLog('Scan concluído!');
-                    setScanStatus((prev: any) => ({ ...prev, status: 'completed', progress: 100 }));
+                    setScanStatus((prev) => prev ? { ...prev, status: 'completed', progress: 100 } : prev);
                     loadResults();
                 }
             } catch (e) {
@@ -91,12 +129,12 @@ export default function ScansPage() {
             setResults(data.alerts || []);
             setCoverage(data.coverage || []);
             addLog(`${data.alerts?.length || 0} alertas encontrados.`);
-        } catch (e) {
+        } catch {
             addLog('Falha ao carregar resultados.');
         }
     };
 
-    const filteredResults = results?.filter((alert: any) => {
+    const filteredResults = results?.filter((alert) => {
         // Filter by Risk
         if (riskFilter !== 'ALL' && alert.risk.toUpperCase() !== riskFilter) return false;
 
@@ -210,7 +248,7 @@ export default function ScansPage() {
                                         <button
                                             onClick={() => setViewMode('coverage')}
                                             className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'coverage' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
-                                        >Cobertura {coverage?.length > 0 && `(${coverage.length})`}</button>
+                                        >Cobertura {(coverage?.length ?? 0) > 0 && `(${coverage?.length ?? 0})`}</button>
                                     </div>
                                 )}
                             </div>
@@ -306,7 +344,7 @@ export default function ScansPage() {
                             </div>
                         )}
 
-                        {viewMode === 'alerts' && filteredResults && filteredResults.map((alert: any, i: number) => (
+                        {viewMode === 'alerts' && filteredResults && filteredResults.map((alert, i) => (
                             <div key={i} className={`bg-white/5 border-l-4 p-4 rounded-r ${alert.risk === 'High' ? 'border-red-500' :
                                 alert.risk === 'Medium' ? 'border-orange-500' :
                                     alert.risk === 'Low' ? 'border-yellow-500' : 'border-blue-500'
@@ -342,12 +380,41 @@ export default function ScansPage() {
                                 <div className="mt-3 text-xs text-gray-500 font-mono bg-black/30 p-2 rounded truncate max-w-full">
                                     {alert.method} {alert.url}
                                 </div>
+                                {(alert.remediations?.length ?? 0) > 0 && (
+                                    <div className="mt-4 space-y-3">
+                                        {(alert.remediations ?? []).map((item, idx) => (
+                                            <div key={idx} className="bg-black/30 border border-white/10 rounded p-3">
+                                                <div className="flex flex-wrap justify-between gap-2 mb-2">
+                                                    <h4 className="text-sm font-bold text-cyber-secondary">{item.title}</h4>
+                                                    <span className="text-[10px] uppercase text-gray-400 border border-white/10 rounded px-2 py-1">
+                                                        {item.category} · {item.confidence}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-gray-300">{item.recommendation}</p>
+                                                <p className="text-xs text-gray-500 mt-2">{item.evidence}</p>
+                                                {(item.snippets?.nginx || item.snippets?.apache) && (
+                                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 mt-3">
+                                                        {item.snippets?.nginx && (
+                                                            <pre className="bg-black/50 border border-white/10 rounded p-2 text-[11px] text-gray-300 overflow-x-auto"><code>{item.snippets.nginx}</code></pre>
+                                                        )}
+                                                        {item.snippets?.apache && (
+                                                            <pre className="bg-black/50 border border-white/10 rounded p-2 text-[11px] text-gray-300 overflow-x-auto"><code>{item.snippets.apache}</code></pre>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                <div className="mt-3 bg-white/5 rounded p-2 text-[11px] text-gray-400 leading-relaxed">
+                                                    {item.report_text}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ))}
 
                         {viewMode === 'coverage' && (
                             <div className="space-y-2">
-                                {coverage && coverage.map((item: any, i: number) => (
+                                {coverage && coverage.map((item, i) => (
                                     <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/5 hover:border-white/10 transition-colors">
                                         <span className="text-sm text-gray-300 font-medium">{item.name}</span>
                                         <div className="flex items-center gap-3">
@@ -377,4 +444,3 @@ export default function ScansPage() {
         </div>
     );
 }
-

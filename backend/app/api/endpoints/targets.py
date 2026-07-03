@@ -12,11 +12,13 @@ from ...models.models import Target, Vulnerability
 from ...services.tech_detector import TechDetector
 from ...services.cve_searcher import CVESearcher
 from ...services.asm_recon import ASMRecon
+from ...services.remediation_engine import RemediationEngine
 
 router = APIRouter()
 detector = TechDetector()
 cve_searcher = CVESearcher(api_key=settings.NVD_API_KEY)
 asm = ASMRecon()
+remediation_engine = RemediationEngine()
 
 class TargetCreate(BaseModel):
     url: str
@@ -179,8 +181,26 @@ def get_target_correlations(target_id: int, db: Session = Depends(get_db)):
         
     # Real-time search
     vulns = cve_searcher.search(keywords)
+    enriched_vulns = []
+    for vuln in vulns:
+        cve_id = vuln.get("cve_id") or vuln.get("id")
+        enriched_vulns.append({
+            **vuln,
+            "cve_id": cve_id,
+            "correlation_reason": (
+                f"Associado porque a tecnologia detectada corresponde a '{vuln.get('matched_keyword')}'."
+                if vuln.get("matched_keyword")
+                else "Associado com base nas tecnologias detectadas no alvo."
+            ),
+            "remediation": remediation_engine.for_cve(vuln),
+        })
     
-    return {"target": target, "correlations": vulns}
+    return {
+        "target": target,
+        "correlations": enriched_vulns,
+        "summary": remediation_engine.summarize_target(enriched_vulns),
+        "hardening": remediation_engine.baseline(technologies),
+    }
 
 @router.delete("/{target_id}", status_code=204)
 def delete_target(target_id: int, db: Session = Depends(get_db)):

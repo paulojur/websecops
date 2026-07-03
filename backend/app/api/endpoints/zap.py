@@ -5,9 +5,11 @@ from app.core.database import get_db
 from app.models.models import Target, Vulnerability
 from typing import Dict, Any, Optional
 from app.services.zap_scanner import ZapScanner
+from app.services.remediation_engine import RemediationEngine
 
 router = APIRouter()
 scanner = ZapScanner()
+remediation_engine = RemediationEngine()
 
 @router.post("/spider")
 def start_spider_scan(target_url: str):
@@ -94,9 +96,13 @@ def get_scan_results(target_url: str, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Error accessing database during results merge: {e}")
         # Proceed with just ZAP alerts
+
+    for alert in alerts_list:
+        alert["remediations"] = remediation_engine.for_alert(alert)
     
     # Update alerts in the response wrapper
     alerts_data["alerts"] = alerts_list
+    alerts_data["hardening"] = remediation_engine.baseline(target.technologies if "target" in locals() and target else {})
 
     # 3. Generate Report (Coverage)
     report = scanner.get_full_report(target_url, alerts_list)
