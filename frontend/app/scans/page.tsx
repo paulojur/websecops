@@ -15,9 +15,19 @@ type AlertRemediation = {
     title: string;
     category: string;
     confidence: string;
+    confidence_reason?: string;
+    root_cause?: string;
     evidence: string;
     recommendation: string;
+    next_step?: string;
     report_text: string;
+    report_sections?: {
+        risk: string;
+        evidence: string;
+        impact: string;
+        recommendation: string;
+        next_step: string;
+    };
     snippets?: {
         nginx?: string;
         apache?: string;
@@ -41,6 +51,19 @@ type CoverageItem = {
     cwe?: string;
 };
 
+type TriageGroup = {
+    root_cause: string;
+    count: number;
+    highest_severity: string;
+    next_step: string;
+};
+
+type ScanTriage = {
+    total_alerts: number;
+    analyst_note?: string;
+    risk_groups?: TriageGroup[];
+};
+
 export default function ScansPage() {
     const [targetUrl, setTargetUrl] = useState('');
     const [scanType, setScanType] = useState('spider');
@@ -48,6 +71,7 @@ export default function ScansPage() {
     const [logs, setLogs] = useState<string[]>([]);
     const [results, setResults] = useState<ScanAlert[] | null>(null);
     const [coverage, setCoverage] = useState<CoverageItem[] | null>(null);
+    const [triage, setTriage] = useState<ScanTriage | null>(null);
     const [riskFilter, setRiskFilter] = useState('ALL');
     const [viewMode, setViewMode] = useState<'alerts' | 'coverage'>('alerts');
 
@@ -63,6 +87,7 @@ export default function ScansPage() {
         setLogs([]);
         setResults(null);
         setCoverage(null);
+        setTriage(null);
         addLog(`Iniciando Scan (${scanType === 'spider' ? 'Passivo/Spider' : 'Ativo'}) em: ${targetUrl}`);
 
         try {
@@ -128,6 +153,7 @@ export default function ScansPage() {
             const data = await getScanResults(targetUrl);
             setResults(data.alerts || []);
             setCoverage(data.coverage || []);
+            setTriage(data.triage || null);
             addLog(`${data.alerts?.length || 0} alertas encontrados.`);
         } catch {
             addLog('Falha ao carregar resultados.');
@@ -328,6 +354,25 @@ export default function ScansPage() {
                                 </div>
                             </div>
                         )}
+
+                        {(viewMode === 'alerts' && triage) && (
+                            <div className="bg-cyber-primary/10 border border-cyber-primary/20 rounded-lg p-4">
+                                {triage.analyst_note && <p className="text-sm text-gray-200">{triage.analyst_note}</p>}
+                                {(triage.risk_groups?.length ?? 0) > 0 && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                                        {triage.risk_groups?.map((group) => (
+                                            <div key={group.root_cause} className="bg-black/30 border border-white/10 rounded p-3">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="text-xs font-bold text-white">{group.root_cause}</span>
+                                                    <span className="text-[10px] uppercase text-gray-400">{group.count} · {group.highest_severity}</span>
+                                                </div>
+                                                <p className="text-[11px] text-gray-500 mt-2">{group.next_step}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex-1 overflow-y-auto pr-2 space-y-3">
@@ -392,6 +437,19 @@ export default function ScansPage() {
                                                 </div>
                                                 <p className="text-xs text-gray-300">{item.recommendation}</p>
                                                 <p className="text-xs text-gray-500 mt-2">{item.evidence}</p>
+                                                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                    <div className="bg-white/5 rounded p-2">
+                                                        <p className="text-[11px] text-gray-400">Confiança</p>
+                                                        <p className="text-xs text-gray-300">{item.confidence}</p>
+                                                        {item.confidence_reason && <p className="text-[11px] text-gray-500 mt-1">{item.confidence_reason}</p>}
+                                                    </div>
+                                                    {item.next_step && (
+                                                        <div className="bg-white/5 rounded p-2">
+                                                            <p className="text-[11px] text-gray-400">Próximo passo</p>
+                                                            <p className="text-xs text-cyber-secondary">{item.next_step}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 {(item.snippets?.nginx || item.snippets?.apache) && (
                                                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 mt-3">
                                                         {item.snippets?.nginx && (
@@ -403,7 +461,14 @@ export default function ScansPage() {
                                                     </div>
                                                 )}
                                                 <div className="mt-3 bg-white/5 rounded p-2 text-[11px] text-gray-400 leading-relaxed">
-                                                    {item.report_text}
+                                                    {item.report_sections ? (
+                                                        <div className="space-y-1">
+                                                            <p><b>Risco:</b> {item.report_sections.risk}</p>
+                                                            <p><b>Evidência:</b> {item.report_sections.evidence}</p>
+                                                            <p><b>Impacto:</b> {item.report_sections.impact}</p>
+                                                            <p><b>Recomendação:</b> {item.report_sections.recommendation}</p>
+                                                        </div>
+                                                    ) : item.report_text}
                                                 </div>
                                             </div>
                                         ))}

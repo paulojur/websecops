@@ -103,6 +103,7 @@ def get_scan_results(target_url: str, db: Session = Depends(get_db)):
     # Update alerts in the response wrapper
     alerts_data["alerts"] = alerts_list
     alerts_data["hardening"] = remediation_engine.baseline(target.technologies if "target" in locals() and target else {})
+    alerts_data["triage"] = remediation_engine.summarize_alerts(alerts_list)
 
     # 3. Generate Report (Coverage)
     report = scanner.get_full_report(target_url, alerts_list)

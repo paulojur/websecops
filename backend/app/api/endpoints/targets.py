@@ -195,10 +195,12 @@ def get_target_correlations(target_id: int, db: Session = Depends(get_db)):
             "remediation": remediation_engine.for_cve(vuln),
         })
     
+    prioritized_vulns = remediation_engine.prioritize(enriched_vulns)
+
     return {
         "target": target,
-        "correlations": enriched_vulns,
-        "summary": remediation_engine.summarize_target(enriched_vulns),
+        "correlations": prioritized_vulns,
+        "summary": remediation_engine.summarize_target(prioritized_vulns),
         "hardening": remediation_engine.baseline(technologies),
     }
 

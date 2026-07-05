@@ -15,13 +15,27 @@ type Remediation = {
     title: string;
     severity: string;
     confidence: string;
+    confidence_reason?: string;
     category: string;
+    root_cause?: string;
     evidence: string;
+    evidence_items?: Array<{
+        source: string;
+        detail: string;
+    }>;
     why_it_matters: string;
     recommendation: string;
+    next_step?: string;
     snippets?: {
         nginx?: string;
         apache?: string;
+    };
+    report_sections?: {
+        risk: string;
+        evidence: string;
+        impact: string;
+        recommendation: string;
+        next_step: string;
     };
     report_text: string;
 };
@@ -37,7 +51,16 @@ type SummaryItem = {
     id: string;
     severity: string;
     score?: number;
+    confidence?: string;
     reason: string;
+    next_step?: string;
+};
+
+type RiskGroup = {
+    root_cause: string;
+    count: number;
+    highest_severity: string;
+    next_step: string;
 };
 
 type TargetDetailsData = {
@@ -50,6 +73,9 @@ type TargetDetailsData = {
     hardening?: Remediation[];
     summary?: {
         total: number;
+        analyst_note?: string;
+        severity_counts?: Record<string, number>;
+        risk_groups?: RiskGroup[];
         top_risks: SummaryItem[];
     };
 };
@@ -110,7 +136,7 @@ export default function TargetDetailsPage() {
 
     const { target, correlations } = data;
     const hardening = data.hardening || [];
-    const summary = data.summary || { total: correlations.length, top_risks: [] };
+    const summary = data.summary || { total: correlations.length, top_risks: [], risk_groups: [] };
 
     const formatTechnologyValue = (value: TechnologyInfo | string) => {
         if (typeof value === 'object' && value !== null) {
@@ -167,6 +193,28 @@ export default function TargetDetailsPage() {
                     Riscos Priorizados ({summary.total})
                 </h2>
 
+                {summary.analyst_note && (
+                    <div className="bg-cyber-primary/10 border border-cyber-primary/20 rounded-lg p-4 mb-4">
+                        <p className="text-sm text-gray-200">{summary.analyst_note}</p>
+                    </div>
+                )}
+
+                {(summary.risk_groups?.length ?? 0) > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+                        {summary.risk_groups?.map((group) => (
+                            <div key={group.root_cause} className="bg-white/5 border border-white/10 rounded-lg p-4">
+                                <div className="flex items-center justify-between gap-2">
+                                    <h3 className="text-sm font-bold text-white">{group.root_cause}</h3>
+                                    <span className="text-[10px] uppercase text-gray-400 border border-white/10 rounded px-2 py-1">
+                                        {group.count}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-2">{group.next_step}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {summary.top_risks?.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
                         {summary.top_risks.map((item) => (
@@ -174,10 +222,11 @@ export default function TargetDetailsPage() {
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="text-cyber-primary font-bold">{item.id}</span>
                                     <span className="text-xs px-2 py-1 rounded border border-red-500/30 text-red-300 bg-red-500/10">
-                                        {item.severity} {item.score ? `CVSS ${item.score}` : ''}
+                                        {item.severity} {item.score ? `CVSS ${item.score}` : ''} {item.confidence ? `· ${item.confidence}` : ''}
                                     </span>
                                 </div>
                                 <p className="text-xs text-gray-400 mt-2">{item.reason}</p>
+                                {item.next_step && <p className="text-xs text-gray-500 mt-2">Próximo passo: {item.next_step}</p>}
                             </div>
                         ))}
                     </div>
@@ -211,13 +260,31 @@ export default function TargetDetailsPage() {
                                             </h4>
                                             <p className="text-sm text-gray-300">{vuln.remediation.recommendation}</p>
                                             <p className="text-xs text-gray-500 mt-2">{vuln.remediation.why_it_matters}</p>
+                                            <div className="mt-3 border-t border-white/10 pt-3 space-y-2">
+                                                <p className="text-xs text-gray-400">Confiança: {vuln.remediation.confidence}</p>
+                                                {vuln.remediation.confidence_reason && (
+                                                    <p className="text-xs text-gray-500">{vuln.remediation.confidence_reason}</p>
+                                                )}
+                                                {vuln.remediation.next_step && (
+                                                    <p className="text-xs text-cyber-secondary">Próximo passo: {vuln.remediation.next_step}</p>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="bg-black/50 border border-white/10 rounded p-4">
                                             <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
                                                 <ClipboardList className="w-4 h-4 text-cyber-primary" />
                                                 Texto para relatório
                                             </h4>
-                                            <p className="text-xs text-gray-300 leading-relaxed">{vuln.remediation.report_text}</p>
+                                            {vuln.remediation.report_sections ? (
+                                                <div className="space-y-2 text-xs text-gray-300 leading-relaxed">
+                                                    <p><b>Risco:</b> {vuln.remediation.report_sections.risk}</p>
+                                                    <p><b>Evidência:</b> {vuln.remediation.report_sections.evidence}</p>
+                                                    <p><b>Impacto:</b> {vuln.remediation.report_sections.impact}</p>
+                                                    <p><b>Recomendação:</b> {vuln.remediation.report_sections.recommendation}</p>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-gray-300 leading-relaxed">{vuln.remediation.report_text}</p>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -244,6 +311,7 @@ export default function TargetDetailsPage() {
                                     </span>
                                 </div>
                                 <p className="text-sm text-gray-300 mb-3">{item.recommendation}</p>
+                                {item.next_step && <p className="text-xs text-cyber-secondary mb-3">Próximo passo: {item.next_step}</p>}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                     {item.snippets?.nginx && (
                                         <pre className="bg-black/50 border border-white/10 rounded p-3 text-xs text-gray-300 overflow-x-auto"><code>{item.snippets.nginx}</code></pre>
