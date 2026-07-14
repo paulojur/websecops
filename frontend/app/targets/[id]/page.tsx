@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ShieldAlert, ArrowLeft, Loader2, AlertTriangle, ExternalLink, ClipboardList, Wrench } from 'lucide-react';
+import { ShieldAlert, ArrowLeft, Loader2, AlertTriangle, ExternalLink, ClipboardList, Wrench, FileDown } from 'lucide-react';
 import { getTargetCorrelations } from '@/lib/api';
+import { exportTargetCorrelationsCSV, exportTargetCorrelationsPDF } from '@/lib/export';
 import Link from 'next/link';
 
 type TechnologyInfo = {

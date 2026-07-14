@@ -57,6 +57,24 @@ npm run dev
 
 ---
 
+## 🚀 Deploy Simples na DigitalOcean
+
+Este projeto pode subir em um único Droplet com Docker. O fluxo mais barato é:
+
+1. Clonar o repositório no droplet.
+2. Copiar `.env.example` para `.env` e ajustar a senha do Postgres.
+3. Subir com `docker compose -f docker-compose.prod.yml up -d --build`.
+
+Exemplo de variáveis:
+
+```bash
+cp .env.example .env
+```
+
+Se quiser usar outro endereço público para a API, ajuste `NEXT_PUBLIC_API_URL` antes de fazer o build do frontend.
+
+---
+
 ## 📂 Estrutura de Pastas
 
 ```

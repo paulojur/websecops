@@ -1,8 +1,9 @@
 'use client';
 
-import { Zap, Play, Activity, ShieldCheck } from 'lucide-react';
+import { Zap, Play, Activity, ShieldCheck, FileDown } from 'lucide-react';
 import { useState } from 'react';
 import { startSpiderScan, startActiveScan, checkScanStatus, getScanResults } from '@/lib/api';
+import { exportScanResultsCSV, exportScanResultsPDF } from '@/lib/export';
 
 type ScanStatus = {
     status: 'starting' | 'scanning' | 'completed';
@@ -265,18 +266,34 @@ export default function ScansPage() {
                                     <ShieldCheck className="w-5 h-5 text-cyber-secondary" />
                                     {viewMode === 'alerts' ? 'Vulnerabilidades' : 'Relatório de Cobertura'}
                                 </h2>
-                                {results && (
-                                    <div className="flex bg-white/5 rounded p-1">
-                                        <button
-                                            onClick={() => setViewMode('alerts')}
-                                            className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'alerts' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
-                                        >Alertas</button>
-                                        <button
-                                            onClick={() => setViewMode('coverage')}
-                                            className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'coverage' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
-                                        >Cobertura {(coverage?.length ?? 0) > 0 && `(${coverage?.length ?? 0})`}</button>
-                                    </div>
-                                )}
+                        {results && (
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex bg-white/5 rounded p-1">
+                                    <button
+                                        onClick={() => setViewMode('alerts')}
+                                        className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'alerts' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
+                                    >Alertas</button>
+                                    <button
+                                        onClick={() => setViewMode('coverage')}
+                                        className={`px-3 py-1 text-xs font-bold rounded transition-colors ${viewMode === 'coverage' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
+                                    >Cobertura {(coverage?.length ?? 0) > 0 && `(${coverage?.length ?? 0})`}</button>
+                                </div>
+                                <button
+                                    onClick={() => exportScanResultsCSV(results, triage as ScanTriage)}
+                                    className="flex items-center gap-1 px-3 py-1 text-xs font-bold text-gray-300 bg-white/5 border border-white/10 rounded hover:bg-white/10 transition-colors"
+                                >
+                                    <FileDown className="w-3 h-3" />
+                                    CSV
+                                </button>
+                                <button
+                                    onClick={() => exportScanResultsPDF(results, triage as ScanTriage, coverage as CoverageItem[])}
+                                    className="flex items-center gap-1 px-3 py-1 text-xs font-bold text-gray-300 bg-white/5 border border-white/10 rounded hover:bg-white/10 transition-colors"
+                                >
+                                    <FileDown className="w-3 h-3" />
+                                    PDF
+                                </button>
+                            </div>
+                        )}
                             </div>
 
                             {scanStatus && (
