@@ -9,11 +9,27 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-cyberintel}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cyberadmin} -d ${POSTGRES_DB:-cyberintel}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 512m
+    cpus: "0.50"
 
   redis:
     image: redis:alpine
     container_name: cyber_redis
     restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 128m
+    cpus: "0.20"
 
   backend:
     build:
@@ -26,23 +42,42 @@ services:
       REDIS_URL: redis://redis:6379/0
       ZAP_URL: http://zap:8080
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8001:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).getcode()==200 else sys.exit(1)\""]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    mem_limit: 640m
+    cpus: "0.70"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://165.245.211.205:8001}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     container_name: cyber_frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    mem_limit: 640m
+    cpus: "0.80"
 
   zap:
     image: zaproxy/zap-bare:latest
@@ -55,6 +90,8 @@ services:
       -config api.disablekey=true
       -config api.addrs.addr.name=.*
       -config api.addrs.addr.regex=true
+    mem_limit: 1200m
+    cpus: "1.00"
 
 volumes:
   postgres_data:

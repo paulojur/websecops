@@ -72,6 +72,34 @@ cp .env.example .env
 ```
 
 Se quiser usar outro endereço público para a API, ajuste `NEXT_PUBLIC_API_URL` antes de fazer o build do frontend.
+Se deixar vazio, o frontend usa automaticamente o host atual com porta `8001`.
+
+### Perfil Recomendado para Droplet 2GB (sem ZAP)
+
+Para economizar RAM, suba apenas os serviços essenciais:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build db redis backend frontend
+```
+
+Quando precisar de scan DAST com ZAP, ative o profile sob demanda:
+
+```bash
+docker compose -f docker-compose.prod.yml --profile scan up -d zap
+```
+
+### Checklist Rápido de Verificação
+
+```bash
+# Status dos containers
+docker compose -f docker-compose.prod.yml ps
+
+# Saúde da API
+curl http://SEU_IP_PUBLICO:8001/health
+
+# Frontend
+curl -I http://SEU_IP_PUBLICO:3000
+```
 
 ---
 

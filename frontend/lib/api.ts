@@ -1,7 +1,26 @@
 import axios from 'axios';
 
+function resolveApiBaseUrl() {
+    const configuredUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+
+    if (configuredUrl) {
+        return `${configuredUrl.replace(/\/$/, '')}/api/v1`;
+    }
+
+    if (typeof window !== 'undefined') {
+        const runtimeUrl = new URL(window.location.href);
+        runtimeUrl.port = '8001';
+        runtimeUrl.pathname = '/api/v1';
+        runtimeUrl.search = '';
+        runtimeUrl.hash = '';
+        return runtimeUrl.toString().replace(/\/$/, '');
+    }
+
+    return 'http://localhost:8000/api/v1';
+}
+
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1` : 'http://localhost:8000/api/v1',
+    baseURL: resolveApiBaseUrl(),
     headers: {
         'Content-Type': 'application/json',
     },

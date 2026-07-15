@@ -39,6 +39,19 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (!selectedTarget) return;
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedTarget(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [selectedTarget]);
+
   const handleAddTarget = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTarget) return;
@@ -120,8 +133,14 @@ export default function Home() {
     <div className="p-8 text-white relative w-full h-full">
       {/* Risk Details Modal */}
       {selectedTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-cyber-dark border border-cyber-primary rounded-lg w-full max-w-2xl max-h-[80vh] flex flex-col shadow-[0_0_50px_rgba(0,255,255,0.2)]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setSelectedTarget(null)}
+        >
+          <div
+            className="bg-cyber-dark border border-cyber-primary rounded-lg w-full max-w-2xl max-h-[80vh] flex flex-col shadow-[0_0_50px_rgba(0,255,255,0.2)]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
