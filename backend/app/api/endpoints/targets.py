@@ -65,6 +65,11 @@ def calculate_risk(db: Session, technologies: Dict[str, Any]) -> int:
         if not tech_name:
             continue
             
+        # Skip generic / non-correlatable entries (e.g. "HTML - Markup Language")
+        category = (tech_info.get("category") or "").strip()
+        if category in {"Markup Language"} or tech_name in {"HTML", "HTML5"}:
+            continue
+
         # The new format is {"WordPress": {"version": "6.4.2", "category": "CMS"}}
         version = tech_info.get("version")
         

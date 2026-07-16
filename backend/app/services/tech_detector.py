@@ -20,89 +20,124 @@ class TechDetector:
         match = re.search(r"([0-9]+(?:\.[0-9]+)+)", text)
         return match.group(1) if match else None
 
-    def _parse_whatweb_output(self, raw_output: str) -> Dict[str, Any]:
-        """Parse WhatWeb output into a normalized technology map."""
+    # Maps WhatWeb plugin names → (normalized name, category)
+    _WHATWEB_PLUGIN_MAP: Dict[str, tuple] = {
+        "WordPress":        ("WordPress",       "CMS"),
+        "Drupal":           ("Drupal",          "CMS"),
+        "Joomla":           ("Joomla",          "CMS"),
+        "Shopify":          ("Shopify",         "E-commerce"),
+        "WooCommerce":      ("WooCommerce",     "E-commerce"),
+        "Magento":          ("Magento",         "E-commerce"),
+        "PrestaShop":       ("PrestaShop",      "E-commerce"),
+        "React":            ("React",           "JavaScript Framework"),
+        "Angular":          ("Angular",         "JavaScript Framework"),
+        "AngularJS":        ("AngularJS",       "JavaScript Framework"),
+        "Vue.js":           ("Vue.js",          "JavaScript Framework"),
+        "Next.js":          ("Next.js",         "JavaScript Framework"),
+        "Nuxt.js":          ("Nuxt.js",         "JavaScript Framework"),
+        "jQuery":           ("jQuery",          "JavaScript Library"),
+        "Bootstrap":        ("Bootstrap",       "CSS Framework"),
+        "Tailwind-CSS":     ("Tailwind CSS",    "CSS Framework"),
+        "Apache":           ("Apache",          "Web Server"),
+        "Nginx":            ("Nginx",           "Web Server"),
+        "IIS":              ("IIS",             "Web Server"),
+        "Lighttpd":         ("Lighttpd",        "Web Server"),
+        "Caddy":            ("Caddy",           "Web Server"),
+        "Gunicorn":         ("Gunicorn",        "Web Server"),
+        "uWSGI":            ("uWSGI",           "Web Server"),
+        "PHP":              ("PHP",             "Programming Language"),
+        "Python":           ("Python",          "Programming Language"),
+        "Ruby":             ("Ruby",            "Programming Language"),
+        "ASP.NET":          ("ASP.NET",         "Programming Language"),
+        "Java":             ("Java",            "Programming Language"),
+        "Node.js":          ("Node.js",         "Runtime"),
+        "Django":           ("Django",          "Web Framework"),
+        "Laravel":          ("Laravel",         "Web Framework"),
+        "Ruby-on-Rails":    ("Ruby on Rails",   "Web Framework"),
+        "Express":          ("Express",         "Web Framework"),
+        "Flask":            ("Flask",           "Web Framework"),
+        "FastAPI":          ("FastAPI",         "Web Framework"),
+        "MySQL":            ("MySQL",           "Database"),
+        "PostgreSQL":       ("PostgreSQL",      "Database"),
+        "MongoDB":          ("MongoDB",         "Database"),
+        "Redis":            ("Redis",           "Database"),
+        "Ubuntu":           ("Ubuntu",          "Operating System"),
+        "Debian":           ("Debian",          "Operating System"),
+        "CentOS":           ("CentOS",          "Operating System"),
+        "HTTPServer":       None,  # handled separately (contains server string)
+        "X-Powered-By":     None,  # handled separately
+        "Cloudflare":       ("Cloudflare",      "CDN / WAF"),
+        "Fastly":           ("Fastly",          "CDN"),
+        "Varnish":          ("Varnish",         "Cache"),
+        "Google-Analytics": ("Google Analytics","Analytics"),
+        "Facebook":         ("Facebook Pixel",  "Analytics"),
+        "reCAPTCHA":        ("reCAPTCHA",       "Security"),
+        "Let's-Encrypt":    ("Let's Encrypt",   "SSL/TLS"),
+    }
+
+    def _parse_whatweb_json(self, raw_json: str) -> Dict[str, Any]:
+        """Parse WhatWeb --log-json output into a normalized technology map."""
         tech_stack: Dict[str, Any] = {}
-        if not raw_output:
-            return tech_stack
+        try:
+            entries = json.loads(raw_json)
+            if not isinstance(entries, list) or not entries:
+                return tech_stack
+            plugins: Dict[str, Any] = entries[0].get("plugins", {})
+            for plugin_name, plugin_data in plugins.items():
+                mapping = self._WHATWEB_PLUGIN_MAP.get(plugin_name)
 
-        lower_output = raw_output.lower()
-        lines = [line.strip() for line in raw_output.splitlines() if line.strip()]
+                # Plugins handled separately to extract version from string value
+                if plugin_name in {"HTTPServer", "X-Powered-By"}:
+                    strings = plugin_data.get("string", [])
+                    value = strings[0] if strings else ""
+                    low = value.lower()
+                    if "nginx" in low:
+                        self._add_tech(tech_stack, "Nginx", self._extract_version(value), "Web Server")
+                    if "apache" in low:
+                        self._add_tech(tech_stack, "Apache", self._extract_version(value), "Web Server")
+                    if "php" in low:
+                        self._add_tech(tech_stack, "PHP", self._extract_version(value), "Programming Language")
+                    if "gunicorn" in low:
+                        self._add_tech(tech_stack, "Gunicorn", self._extract_version(value), "Web Server")
+                    if "iis" in low:
+                        self._add_tech(tech_stack, "IIS", self._extract_version(value), "Web Server")
+                    continue
 
-        for line in lines:
-            if line.startswith("[") and "]" in line:
-                continue
+                if mapping is None:
+                    continue  # explicitly unmapped, skip
 
-            if ":" in line:
-                key, value = line.split(":", 1)
-                key = key.strip()
-                value = value.strip()
-            else:
-                key = ""
-                value = line
-
-            if not value:
-                continue
-
-            if "wordpress" in value.lower():
-                version = self._extract_version(value)
-                self._add_tech(tech_stack, "WordPress", version, "CMS")
-            elif "shopify" in value.lower():
-                self._add_tech(tech_stack, "Shopify", None, "E-commerce")
-            elif "react" in value.lower():
-                self._add_tech(tech_stack, "React", None, "JavaScript Framework")
-            elif "angular" in value.lower():
-                self._add_tech(tech_stack, "Angular", None, "JavaScript Framework")
-            elif "vue" in value.lower():
-                self._add_tech(tech_stack, "Vue.js", None, "JavaScript Framework")
-            elif "bootstrap" in value.lower():
-                self._add_tech(tech_stack, "Bootstrap", None, "CSS Framework")
-            elif "jquery" in value.lower():
-                self._add_tech(tech_stack, "jQuery", None, "JavaScript Library")
-            elif "nginx" in value.lower():
-                self._add_tech(tech_stack, "Nginx", self._extract_version(value), "Web Server")
-            elif "apache" in value.lower():
-                self._add_tech(tech_stack, "Apache", self._extract_version(value), "Web Server")
-            elif "php" in value.lower():
-                self._add_tech(tech_stack, "PHP", self._extract_version(value), "Programming Language")
-            elif "linux" in value.lower():
-                self._add_tech(tech_stack, "Linux", None, "Operating System")
-            elif "windows" in value.lower():
-                self._add_tech(tech_stack, "Windows", None, "Operating System")
-
-            if key.lower() in {"httpserver", "x-powered-by", "server"}:
-                lowered_value = value.lower()
-                if "nginx" in lowered_value:
-                    self._add_tech(tech_stack, "Nginx", self._extract_version(value), "Web Server")
-                if "apache" in lowered_value:
-                    self._add_tech(tech_stack, "Apache", self._extract_version(value), "Web Server")
-                if "php" in lowered_value:
-                    self._add_tech(tech_stack, "PHP", self._extract_version(value), "Programming Language")
-
-        if not tech_stack and lower_output:
-            self._add_tech(tech_stack, "HTML", None, "Markup Language")
-
+                if mapping:
+                    name, category = mapping
+                    versions = plugin_data.get("version", [])
+                    version = versions[0] if versions else None
+                    self._add_tech(tech_stack, name, version, category)
+        except (json.JSONDecodeError, KeyError, IndexError) as exc:
+            print(f"[!] WhatWeb JSON parse error: {exc}")
         return tech_stack
 
     def _whatweb_detection(self, url: str) -> Dict[str, Any]:
-        """Try WhatWeb, which is open source and free, as a richer fingerprinting source."""
+        """Run WhatWeb with JSON output for reliable structured parsing."""
         try:
             result = subprocess.run(
-                ["whatweb", "--color=never", url],
+                ["whatweb", "--color=never", "--log-json=/dev/stdout", url],
                 capture_output=True,
                 text=True,
                 timeout=30,
                 check=False,
             )
-            if result.returncode == 0 and result.stdout.strip():
-                return self._parse_whatweb_output(result.stdout)
+            output = result.stdout.strip()
+            if output:
+                parsed = self._parse_whatweb_json(output)
+                if parsed:
+                    return parsed
             if result.stderr:
-                print(f"[!] WhatWeb error: {result.stderr.strip()}")
+                print(f"[!] WhatWeb stderr: {result.stderr.strip()[:200]}")
         except FileNotFoundError:
             print("[!] WhatWeb is not installed in the container")
         except Exception as exc:
             print(f"[!] WhatWeb detection failed: {exc}")
         return {}
+
 
     def _fallback_detection(self, url: str) -> Dict[str, Any]:
         """Simple heuristic fallback when Wappalyzer/WhatWeb are unavailable or return nothing."""
@@ -147,8 +182,6 @@ class TechDetector:
                 self._add_tech(tech_stack, "Windows", None, "Operating System")
             if "freebsd" in combined:
                 self._add_tech(tech_stack, "FreeBSD", None, "Operating System")
-            if "text/html" in (headers.get("content-type", "") or "").lower():
-                self._add_tech(tech_stack, "HTML", None, "Markup Language")
         except Exception as exc:
             print(f"[!] Fallback detection failed: {exc}")
 
