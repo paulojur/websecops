@@ -6,6 +6,7 @@ from ...models.models import Intelligence
 
 router = APIRouter()
 
+@router.get("", response_model=List[dict])
 @router.get("/", response_model=List[dict])
 def read_intelligence(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
     """

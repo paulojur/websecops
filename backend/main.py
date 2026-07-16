@@ -7,7 +7,7 @@ from app.core.logging_config import setup_logging
 
 logger = setup_logging()
 
-app = FastAPI(title="CyberRisk Intel API", version="0.1.0")
+app = FastAPI(title="CyberRisk Intel API", version="0.1.0", redirect_slashes=False)
 
 @app.on_event("startup")
 def startup_event():

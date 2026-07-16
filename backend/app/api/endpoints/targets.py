@@ -142,6 +142,7 @@ def add_and_scan_target(target_in: TargetCreate, db: Session = Depends(get_db)):
         new_target.potential_vulns = risk_count
         return new_target
 
+@router.get("", response_model=List[TargetResponse])
 @router.get("/", response_model=List[TargetResponse])
 def get_targets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
