@@ -97,6 +97,39 @@ def calculate_risk(db: Session, technologies: Dict[str, Any]) -> int:
         print(f"Error calculating risk: {e}")
         return 0
 
+
+def build_correlation_explanation(vuln: Dict[str, Any]) -> Dict[str, str]:
+    """Create a small, deterministic explanation for a CVE correlation."""
+    keyword = str(vuln.get("matched_keyword") or "").strip()
+
+    if keyword:
+        if any(char.isdigit() for char in keyword):
+            return {
+                "correlation_reason": f"Correlacao por tecnologia e versao detectadas em '{keyword}'.",
+                "confidence": "HIGH",
+                "confidence_reason": "A busca encontrou nome + versao, o que reduz o ruido da correlacao local.",
+            }
+
+        return {
+            "correlation_reason": f"Correlacao por nome da tecnologia em '{keyword}'.",
+            "confidence": "LOW",
+            "confidence_reason": "Nao ha versao confirmada; trate este item como hipotese ate validar o inventario real.",
+        }
+
+    score = vuln.get("score")
+    if score:
+        return {
+            "correlation_reason": f"Correlacao baseada em CVSS {score} e nos sinais de tecnologia do alvo.",
+            "confidence": "LOW",
+            "confidence_reason": "Nao foi possivel extrair uma chave de correlacao mais especifica.",
+        }
+
+    return {
+        "correlation_reason": "Associado com base nas tecnologias detectadas para o alvo.",
+        "confidence": "LOW",
+        "confidence_reason": "Nao foi possivel derivar uma correspondencia explicita entre tecnologia e CVE.",
+    }
+
 @router.post("/scan", response_model=TargetResponse)
 def add_and_scan_target(target_in: TargetCreate, db: Session = Depends(get_db)):
     """
@@ -190,14 +223,11 @@ def get_target_correlations(target_id: int, db: Session = Depends(get_db)):
     enriched_vulns = []
     for vuln in vulns:
         cve_id = vuln.get("cve_id") or vuln.get("id")
+        explanation = build_correlation_explanation(vuln)
         enriched_vulns.append({
             **vuln,
             "cve_id": cve_id,
-            "correlation_reason": (
-                f"Associado porque a tecnologia detectada corresponde a '{vuln.get('matched_keyword')}'."
-                if vuln.get("matched_keyword")
-                else "Associado com base nas tecnologias detectadas no alvo."
-            ),
+            **explanation,
             "remediation": remediation_engine.for_cve(vuln),
         })
     

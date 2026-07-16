@@ -4,19 +4,23 @@ import { ShieldAlert, Globe, Search, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getTargets, addTarget, deleteTarget } from '@/lib/api';
+import { AppMode, deleteDemoTarget, getAppMode, getDemoTargets, setAppMode, upsertDemoTarget } from '@/lib/demo-targets';
 
 export default function TargetsPage() {
     const [targets, setTargets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newTarget, setNewTarget] = useState('');
+    const [appMode, setAppModeState] = useState<AppMode>('live');
 
     useEffect(() => {
-        loadTargets();
+        const mode = getAppMode();
+        setAppModeState(mode);
+        loadTargets(mode);
     }, []);
 
-    async function loadTargets() {
+    async function loadTargets(mode: AppMode) {
         try {
-            const data = await getTargets();
+            const data = mode === 'demo' ? getDemoTargets() : await getTargets();
             setTargets(data);
         } catch (e) {
             console.error(e);
@@ -28,9 +32,19 @@ export default function TargetsPage() {
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newTarget) return;
-        await addTarget(newTarget);
+        if (appMode === 'demo') {
+            upsertDemoTarget(newTarget);
+        } else {
+            await addTarget(newTarget);
+        }
         setNewTarget('');
-        loadTargets();
+        loadTargets(appMode);
+    };
+
+    const handleModeChange = (mode: AppMode) => {
+        setAppMode(mode);
+        setAppModeState(mode);
+        loadTargets(mode);
     };
 
     return (
@@ -43,10 +57,19 @@ export default function TargetsPage() {
                     </h1>
                     <p className="text-gray-400 mt-2">Monitore suas aplicações web e APIs</p>
                 </div>
-                <div className="flex items-center gap-2 text-xs font-mono text-gray-500">
-                    {targets.length} ALVOS ATIVOS
+                <div className="flex items-center gap-3 text-xs font-mono text-gray-500">
+                    <div className="flex items-center gap-1 bg-cyber-panel border border-white/10 rounded px-2 py-1">
+                        <button onClick={() => handleModeChange('live')} className={`px-2 py-1 rounded ${appMode === 'live' ? 'bg-cyber-primary text-black' : 'text-gray-400'}`}>LIVE</button>
+                        <button onClick={() => handleModeChange('demo')} className={`px-2 py-1 rounded ${appMode === 'demo' ? 'bg-cyber-secondary text-black' : 'text-gray-400'}`}>DEMO</button>
+                    </div>
+                    <div>{targets.length} ALVOS ATIVOS</div>
                 </div>
             </header>
+
+            <div className="glass-panel p-4 rounded-lg border border-white/10">
+                <p className="text-xs uppercase tracking-widest text-gray-400">Modo atual</p>
+                <p className="text-sm text-gray-300 mt-1">{appMode === 'demo' ? 'Os alvos ficam apenas no navegador do visitante.' : 'Os alvos são salvos no backend e consultados pela API.'}</p>
+            </div>
 
             {/* Add Target Bar */}
             <div className="glass-panel p-6 rounded-lg">

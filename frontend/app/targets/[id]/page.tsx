@@ -6,6 +6,7 @@ import { ShieldAlert, ArrowLeft, Loader2, AlertTriangle, ExternalLink, Clipboard
 import { getTargetCorrelations } from '@/lib/api';
 import { exportTargetCorrelationsCSV, exportTargetCorrelationsPDF } from '@/lib/export';
 import Link from 'next/link';
+import { getAppMode, getDemoTarget } from '@/lib/demo-targets';
 
 type TechnologyInfo = {
     version?: string;
@@ -89,6 +90,7 @@ export default function TargetDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [data, setData] = useState<TargetDetailsData | null>(null);
+    const [appMode, setAppMode] = useState<'live' | 'demo'>('live');
 
     useEffect(() => {
         if (!id) return;
@@ -96,6 +98,28 @@ export default function TargetDetailsPage() {
         const fetchData = async () => {
             try {
                 setLoading(true);
+                const mode = getAppMode();
+                setAppMode(mode);
+
+                if (mode === 'demo') {
+                    const demoTarget = getDemoTarget(parseInt(id));
+                    if (!demoTarget) {
+                        throw new Error('Alvo local nao encontrado no modo demo.');
+                    }
+
+                    setData({
+                        target: {
+                            url: demoTarget.url,
+                            created_at: demoTarget.created_at,
+                            technologies: demoTarget.technologies,
+                        },
+                        correlations: demoTarget.correlations,
+                        hardening: demoTarget.hardening,
+                        summary: demoTarget.summary,
+                    });
+                    return;
+                }
+
                 const result = await getTargetCorrelations(parseInt(id));
                 setData(result);
             } catch (err: unknown) {
@@ -113,7 +137,7 @@ export default function TargetDetailsPage() {
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-cyber-primary">
                 <Loader2 className="w-12 h-12 animate-spin mb-4" />
                 <h2 className="text-xl font-bold">Buscando CVEs em tempo real...</h2>
-                <p className="text-gray-400 mt-2">Consultando a API do NVD para o alvo {id}</p>
+                <p className="text-gray-400 mt-2">{appMode === 'demo' ? 'Lendo o demo local salvo no navegador.' : `Consultando a API do NVD para o alvo ${id}`}</p>
             </div>
         );
     }

@@ -5,6 +5,7 @@ import { getVulnerabilities, getIntelligence, getStats, getTargets, addTarget, g
 import { ShieldAlert, Terminal, Activity, Globe, Zap, Cpu, X, Trash, RefreshCw, Search, LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SeverityChart from './components/SeverityChart';
+import { AppMode, deleteDemoTarget, getAppMode, getDemoTargets, setAppMode, upsertDemoTarget } from '@/lib/demo-targets';
 
 export default function Home() {
   const [vulns, setVulns] = useState([]);
@@ -18,14 +19,19 @@ export default function Home() {
   const [loadingCorrelations, setLoadingCorrelations] = useState(false);
   const [riskFilter, setRiskFilter] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [appMode, setAppModeState] = useState<AppMode>('live');
 
   useEffect(() => {
-    async function fetchData() {
+    setAppModeState(getAppMode());
+  }, []);
+
+  useEffect(() => {
+    async function fetchData(mode: AppMode) {
       try {
         const v = await getVulnerabilities(10);
         const i = await getIntelligence(10);
         const s = await getStats();
-        const t = await getTargets();
+        const t = mode === 'demo' ? getDemoTargets() : await getTargets();
         setVulns(v);
         setIntel(i);
         setStats(s);
@@ -34,10 +40,15 @@ export default function Home() {
         console.error("Failed to fetch data", e);
       }
     }
-    fetchData();
-    const interval = setInterval(fetchData, 30000); // Poll every 30s
-    return () => clearInterval(interval);
-  }, []);
+
+    fetchData(appMode);
+    const interval = appMode === 'live' ? setInterval(() => fetchData(appMode), 30000) : undefined; // Poll every 30s in live mode only
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [appMode]);
 
   useEffect(() => {
     if (!selectedTarget) return;
@@ -58,10 +69,14 @@ export default function Home() {
 
     setLoadingTarget(true);
     try {
-      await addTarget(newTarget);
+      if (appMode === 'demo') {
+        upsertDemoTarget(newTarget);
+      } else {
+        await addTarget(newTarget);
+      }
       setNewTarget('');
       // Refresh list
-      const t = await getTargets();
+      const t = appMode === 'demo' ? getDemoTargets() : await getTargets();
       setTargets(t);
       alert('Target scanned successfully!');
     } catch (error) {
@@ -78,8 +93,12 @@ export default function Home() {
     setSelectedTarget(target);
     setLoadingCorrelations(true);
     try {
-      const data = await getTargetCorrelations(target.id);
-      setCorrelations(Array.isArray(data.correlations) ? data.correlations : []);
+      if (appMode === 'demo') {
+        setCorrelations(Array.isArray(target.correlations) ? target.correlations : []);
+      } else {
+        const data = await getTargetCorrelations(target.id);
+        setCorrelations(Array.isArray(data.correlations) ? data.correlations : []);
+      }
     } catch (e) {
       console.error("Failed to load correlations", e);
     } finally {
@@ -91,8 +110,13 @@ export default function Home() {
     if (!confirm('Are you sure you want to remove this target?')) return;
 
     try {
-      await deleteTarget(id);
-      const t = await getTargets();
+      if (appMode === 'demo') {
+        deleteDemoTarget(id);
+      } else {
+        await deleteTarget(id);
+      }
+
+      const t = appMode === 'demo' ? getDemoTargets() : await getTargets();
       setTargets(t);
     } catch (e) {
       console.error("Failed to delete target", e);
@@ -125,6 +149,7 @@ export default function Home() {
       c.description?.toLowerCase().includes(search) ||
       c.title?.toLowerCase().includes(search) ||
       c.id?.toLowerCase().includes(search) ||
+      c.cve_id?.toLowerCase().includes(search) ||
       c.matched_keyword?.toLowerCase().includes(search)
     );
   });
@@ -181,12 +206,14 @@ export default function Home() {
                     filteredCorrelations.map((c: any, i) => (
                       <div key={i} className="bg-white/5 border-l-4 border-red-500 p-4 rounded-r">
                         <div className="flex justify-between items-start mb-2">
-                          <span className="font-bold text-red-400">{c.id}</span>
+                          <span className="font-bold text-red-400">{c.id || c.cve_id}</span>
                           <span className="text-[10px] uppercase bg-white/10 px-2 py-0.5 rounded text-gray-300">
-                            Matches: {c.matched_keyword}
+                            {c.confidence || 'LOW'}
                           </span>
                         </div>
                         <p className="text-sm text-gray-300">{c.description}</p>
+                        {c.correlation_reason && <p className="text-xs text-gray-500 mt-2">{c.correlation_reason}</p>}
+                        {c.confidence_reason && <p className="text-xs text-gray-500 mt-1">{c.confidence_reason}</p>}
                         <div className="mt-2 text-xs text-gray-500">
                           Published: {new Date(c.published).toLocaleDateString()} | Severity: {c.severity}
                         </div>
@@ -215,6 +242,20 @@ export default function Home() {
           <p className="text-gray-400 text-sm mt-1 uppercase tracking-widest pl-12">Monitoramento em Tempo Real</p>
         </div>
         <div className="flex items-center gap-4 text-xs font-mono">
+          <div className="flex items-center gap-2 bg-cyber-panel border border-white/10 rounded px-2 py-1">
+            <button
+              onClick={() => { setAppMode('live'); setAppModeState('live'); }}
+              className={`px-3 py-1 rounded uppercase tracking-wider transition-colors ${appMode === 'live' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
+            >
+              LIVE
+            </button>
+            <button
+              onClick={() => { setAppMode('demo'); setAppModeState('demo'); }}
+              className={`px-3 py-1 rounded uppercase tracking-wider transition-colors ${appMode === 'demo' ? 'bg-cyber-secondary text-black' : 'text-gray-400 hover:text-white'}`}
+            >
+              DEMO
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
             <span>MONITORING ACTIVE</span>
@@ -232,6 +273,24 @@ export default function Home() {
           </button>
         </div>
       </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+        <div className="glass-panel p-4 rounded-lg border border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-gray-400">Modo atual</p>
+          <h2 className="text-lg font-bold text-white mt-1">{appMode === 'demo' ? 'Demo local no navegador' : 'Live com backend'}</h2>
+          <p className="text-sm text-gray-400 mt-2">{appMode === 'demo' ? 'Os alvos ficam isolados no localStorage do visitante.' : 'Os alvos e correlações vêm da API e do banco.'}</p>
+        </div>
+        <div className="glass-panel p-4 rounded-lg border border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-gray-400">Em 2 minutos</p>
+          <h2 className="text-lg font-bold text-white mt-1">Cadastre, detecte, priorize</h2>
+          <p className="text-sm text-gray-400 mt-2">1. Adicione um alvo. 2. Veja a tecnologia detectada. 3. Abra a correlação com motivo e confiança.</p>
+        </div>
+        <div className="glass-panel p-4 rounded-lg border border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-gray-400">Scan sob demanda</p>
+          <h2 className="text-lg font-bold text-white mt-1">ZAP apenas quando precisar</h2>
+          <p className="text-sm text-gray-400 mt-2">O profile de scan fica desligado por padrão para manter o stack viável em máquinas pequenas.</p>
+        </div>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
@@ -268,6 +327,9 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="text-gray-300 text-sm mt-2 line-clamp-2">{v.description}</p>
+                  {v.correlation_reason && (
+                    <p className="text-xs text-gray-500 mt-2 line-clamp-2">{v.correlation_reason}</p>
+                  )}
                   <div className="text-xs text-gray-500 mt-2 flex justify-between">
                     <span>Source: {v.source}</span>
                     <span>{new Date(v.published).toLocaleDateString()}</span>
@@ -286,7 +348,7 @@ export default function Home() {
               <form onSubmit={handleAddTarget} className="flex gap-2">
                 <input
                   type="url"
-                  placeholder="https://example.com"
+                  placeholder={appMode === 'demo' ? 'https://portfolio.acme.test' : 'https://example.com'}
                   className="bg-black/30 border border-white/10 rounded px-3 py-1 text-sm text-white focus:outline-none focus:border-cyber-primary"
                   value={newTarget}
                   onChange={(e) => setNewTarget(e.target.value)}
@@ -306,6 +368,12 @@ export default function Home() {
               {targets.map((t: any) => (
                 <div key={t.id} className={`p-4 bg-white/5 border ${t.potential_vulns > 0 ? 'border-red-500/50' : 'border-white/5'} rounded hover:border-cyber-primary/50 transition-colors relative`}>
                   <h3 className="font-mono text-sm font-bold text-cyber-primary truncate" title={t.url}>{t.url}</h3>
+
+                  {appMode === 'demo' && (
+                    <div className="absolute top-2 left-2 text-[10px] uppercase tracking-widest bg-cyber-secondary/15 text-cyber-secondary border border-cyber-secondary/20 px-2 py-0.5 rounded">
+                      local demo
+                    </div>
+                  )}
 
                   {/* Risk Badge */}
                   {t.potential_vulns > 0 && (
