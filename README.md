@@ -101,6 +101,13 @@ curl http://SEU_IP_PUBLICO:8001/health
 curl -I http://SEU_IP_PUBLICO:3000
 ```
 
+### Se Você Ainda Estiver Em `next dev`
+
+O warning de `Cross origin request detected` é esperado quando o servidor de desenvolvimento é acessado por IP público.
+Se quiser continuar nesse modo, defina `NEXT_ALLOWED_DEV_ORIGINS=http://SEU_IP_PUBLICO:3000` no `.env` antes de subir o frontend.
+
+Para o droplet, o caminho mais estável continua sendo o compose de produção.
+
 ---
 
 ## 📂 Estrutura de Pastas
