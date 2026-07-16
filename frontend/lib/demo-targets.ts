@@ -116,7 +116,7 @@ function slugify(value: string) {
         .slice(0, 24) || 'target';
 }
 
-function inferTechnologies(url: string) {
+function inferTechnologies(url: string): Record<string, DemoTechInfo> {
     const parsed = new URL(url);
     const footprint = `${parsed.hostname} ${parsed.pathname}`.toLowerCase();
 
@@ -138,15 +138,15 @@ function inferTechnologies(url: string) {
 
     if (footprint.includes('shop') || footprint.includes('store') || footprint.includes('commerce')) {
         return {
-            Next.js: { version: '14.2', category: 'Frontend' },
+            'Next.js': { version: '14.2', category: 'Frontend' },
             React: { version: '18.3', category: 'Frontend' },
-            Node.js: { version: '20', category: 'Runtime' },
+            'Node.js': { version: '20', category: 'Runtime' },
         } satisfies Record<string, DemoTechInfo>;
     }
 
     return {
         Nginx: { version: '1.24', category: 'Web Server' },
-        Next.js: { version: '14.2', category: 'Frontend' },
+        'Next.js': { version: '14.2', category: 'Frontend' },
         PostgreSQL: { version: '16', category: 'Database' },
     } satisfies Record<string, DemoTechInfo>;
 }
