@@ -71,8 +71,8 @@ Exemplo de variáveis:
 cp .env.example .env
 ```
 
-Se quiser usar outro endereço público para a API, ajuste `NEXT_PUBLIC_API_URL` antes de fazer o build do frontend.
-Se deixar vazio, o frontend usa automaticamente o host atual com porta `8001`.
+As chamadas da interface passam pelo próprio Next.js, então o frontend não precisa de uma URL pública da API para o caso normal.
+O backend continua acessível na rede interna do Docker e o Next faz o proxy para `api/v1`.
 
 ### Perfil Recomendado para Droplet 2GB (sem ZAP)
 

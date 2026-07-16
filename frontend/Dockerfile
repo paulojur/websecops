@@ -20,7 +20,9 @@ RUN \
 FROM base AS builder
 WORKDIR /app
 ARG NEXT_PUBLIC_API_URL
+ARG BACKEND_INTERNAL_URL=http://backend:8000
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -37,7 +39,9 @@ WORKDIR /app
 
 ENV NODE_ENV production
 ARG NEXT_PUBLIC_API_URL
+ARG BACKEND_INTERNAL_URL=http://backend:8000
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
