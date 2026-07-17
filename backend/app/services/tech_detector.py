@@ -117,27 +117,37 @@ class TechDetector:
 
     def _whatweb_detection(self, url: str) -> Dict[str, Any]:
         """Run WhatWeb with JSON output for reliable structured parsing."""
+        import tempfile
         try:
-            result = subprocess.run(
-                ["whatweb", "--color=never", "--log-json=/dev/stdout", url],
-                capture_output=True,
-                text=True,
-                timeout=30,
-                check=False,
-            )
-            output = result.stdout.strip()
-            if output:
-                parsed = self._parse_whatweb_json(output)
-                if parsed:
-                    return parsed
-            if result.stderr:
-                print(f"[!] WhatWeb stderr: {result.stderr.strip()[:200]}")
+            with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
+                tmp_name = tmp.name
+
+            try:
+                result = subprocess.run(
+                    ["whatweb", "-q", "--color=never", f"--log-json={tmp_name}", url],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    check=False,
+                )
+                
+                with open(tmp_name, 'r', encoding='utf-8') as f:
+                    output = f.read().strip()
+                    
+                if output:
+                    parsed = self._parse_whatweb_json(output)
+                    if parsed:
+                        return parsed
+                if result.stderr:
+                    print(f"[!] WhatWeb stderr: {result.stderr.strip()[:200]}")
+            finally:
+                if os.path.exists(tmp_name):
+                    os.remove(tmp_name)
         except FileNotFoundError:
             print("[!] WhatWeb is not installed in the container")
         except Exception as exc:
             print(f"[!] WhatWeb detection failed: {exc}")
         return {}
-
 
     def _fallback_detection(self, url: str) -> Dict[str, Any]:
         """Simple heuristic fallback when Wappalyzer/WhatWeb are unavailable or return nothing."""
