@@ -5,7 +5,7 @@ import { getVulnerabilities, getIntelligence, getStats, getTargets, addTarget, g
 import { ShieldAlert, Terminal, Activity, Globe, Zap, Cpu, X, Trash, RefreshCw, Search, LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SeverityChart from './components/SeverityChart';
-
+import { AppMode, deleteDemoTarget, getAppMode, getDemoTargets, setAppMode, saveDemoTarget } from '@/lib/demo-targets';
 
 export default function Home() {
   const [vulns, setVulns] = useState([]);
@@ -19,15 +19,18 @@ export default function Home() {
   const [loadingCorrelations, setLoadingCorrelations] = useState(false);
   const [riskFilter, setRiskFilter] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
-
+  const [appMode, setAppModeState] = useState<AppMode>('demo');
 
   useEffect(() => {
-    async function fetchData() {
+    setAppModeState(getAppMode());
+  }, []);
+  useEffect(() => {
+    async function fetchData(mode: AppMode) {
       try {
         const v = await getVulnerabilities(10);
         const i = await getIntelligence(10);
         const s = await getStats();
-        const t = await getTargets();
+        const t = mode === 'demo' ? getDemoTargets() : await getTargets();
         setVulns(v);
         setIntel(i);
         setStats(s);
@@ -37,10 +40,12 @@ export default function Home() {
       }
     }
 
-    fetchData();
-    const interval = setInterval(() => fetchData(), 30000); // Poll every 30s
-    return () => clearInterval(interval);
-  }, []);
+    fetchData(appMode);
+    const interval = appMode === 'live' ? setInterval(() => fetchData(appMode), 30000) : undefined;
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [appMode]);
 
   useEffect(() => {
     if (!selectedTarget) return;
@@ -61,10 +66,17 @@ export default function Home() {
 
     setLoadingTarget(true);
     try {
-      await addTarget(newTarget);
+      if (appMode === 'demo') {
+        // Real scan but local storage only
+        const { analyzeTarget } = await import('@/lib/api');
+        const data = await analyzeTarget(newTarget);
+        saveDemoTarget(data.target);
+      } else {
+        await addTarget(newTarget);
+      }
       setNewTarget('');
       // Refresh list
-      const t = await getTargets();
+      const t = appMode === 'demo' ? getDemoTargets() : await getTargets();
       setTargets(t);
       alert('Target scanned successfully!');
     } catch (error) {
@@ -81,8 +93,13 @@ export default function Home() {
     setSelectedTarget(target);
     setLoadingCorrelations(true);
     try {
-      const data = await getTargetCorrelations(target.id);
-      setCorrelations(Array.isArray(data.correlations) ? data.correlations : []);
+      if (appMode === 'demo') {
+        // Demo targets already have correlations packed from the analyze endpoint
+        setCorrelations(Array.isArray(target.correlations) ? target.correlations : []);
+      } else {
+        const data = await getTargetCorrelations(target.id);
+        setCorrelations(Array.isArray(data.correlations) ? data.correlations : []);
+      }
     } catch (e) {
       console.error("Failed to load correlations", e);
     } finally {
@@ -94,8 +111,12 @@ export default function Home() {
     if (!confirm('Are you sure you want to remove this target?')) return;
 
     try {
-      await deleteTarget(id);
-      const t = await getTargets();
+      if (appMode === 'demo') {
+        deleteDemoTarget(id);
+      } else {
+        await deleteTarget(id);
+      }
+      const t = appMode === 'demo' ? getDemoTargets() : await getTargets();
       setTargets(t);
     } catch (e) {
       console.error("Failed to delete target", e);
@@ -221,7 +242,20 @@ export default function Home() {
           <p className="text-gray-400 text-sm mt-1 uppercase tracking-widest pl-12">Monitoramento em Tempo Real</p>
         </div>
         <div className="flex items-center gap-4 text-xs font-mono">
-
+          <div className="flex items-center gap-2 bg-cyber-panel border border-white/10 rounded px-2 py-1">
+            <button
+              onClick={() => { setAppMode('live'); setAppModeState('live'); }}
+              className={`px-3 py-1 rounded uppercase tracking-wider transition-colors ${appMode === 'live' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
+            >
+              LIVE
+            </button>
+            <button
+              onClick={() => { setAppMode('demo'); setAppModeState('demo'); }}
+              className={`px-3 py-1 rounded uppercase tracking-wider transition-colors ${appMode === 'demo' ? 'bg-cyber-secondary text-black' : 'text-gray-400 hover:text-white'}`}
+            >
+              DEMO
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
             <span>MONITORING ACTIVE</span>
@@ -242,9 +276,9 @@ export default function Home() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
         <div className="glass-panel p-4 rounded-lg border border-white/10">
-          <p className="text-[10px] uppercase tracking-widest text-gray-400">Status do Sistema</p>
-          <h2 className="text-lg font-bold text-white mt-1">Operação Normal</h2>
-          <p className="text-sm text-gray-400 mt-2">Os alvos e correlações vêm diretamente da base inteligente.</p>
+          <p className="text-[10px] uppercase tracking-widest text-gray-400">Modo atual</p>
+          <h2 className="text-lg font-bold text-white mt-1">{appMode === 'demo' ? 'Demo local' : 'Live com backend'}</h2>
+          <p className="text-sm text-gray-400 mt-2">{appMode === 'demo' ? 'Os dados são escaneados em tempo real no backend, mas salvos apenas no seu navegador.' : 'Os alvos e correlações vêm diretamente da base inteligente.'}</p>
         </div>
         <div className="glass-panel p-4 rounded-lg border border-white/10">
           <p className="text-[10px] uppercase tracking-widest text-gray-400">Em 2 minutos</p>
@@ -335,7 +369,11 @@ export default function Home() {
                 <div key={t.id} className={`p-4 bg-white/5 border ${t.potential_vulns > 0 ? 'border-red-500/50' : 'border-white/5'} rounded hover:border-cyber-primary/50 transition-colors relative`}>
                   <h3 className="font-mono text-sm font-bold text-cyber-primary truncate" title={t.url}>{t.url}</h3>
 
-
+                  {appMode === 'demo' && (
+                    <div className="absolute top-2 left-2 text-[10px] uppercase tracking-widest bg-cyber-secondary/15 text-cyber-secondary border border-cyber-secondary/20 px-2 py-0.5 rounded">
+                      local demo
+                    </div>
+                  )}
 
                   {/* Risk Badge */}
                   {t.potential_vulns > 0 && (

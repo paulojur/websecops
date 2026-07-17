@@ -32,6 +32,11 @@ export const addTarget = async (url: string) => {
     return response.data;
 }
 
+export const analyzeTarget = async (url: string) => {
+    const response = await api.post(`/targets/analyze`, { url });
+    return response.data;
+}
+
 export const getTargetCorrelations = async (id: number) => {
     const response = await api.get(`/targets/${id}/correlations`);
     return response.data;

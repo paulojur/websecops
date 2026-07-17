@@ -180,6 +180,79 @@ def add_and_scan_target(target_in: TargetCreate, db: Session = Depends(get_db)):
         new_target.potential_vulns = risk_count
         return new_target
 
+@router.post("/analyze")
+def analyze_target(target_in: TargetCreate, db: Session = Depends(get_db)):
+    """
+    Stateless endpoint for Demo Mode.
+    Scans the target, detects technologies, and correlates CVEs without saving to the DB.
+    """
+    normalized_url = normalize_url(target_in.url)
+
+    # 1. Detect Technologies
+    tech_stack = detector.detect(normalized_url)
+    if "error" in tech_stack:
+        tech_stack = {}
+
+    risk_count = calculate_risk(db, tech_stack)
+    status = "VULNERABLE" if risk_count > 0 else "SECURE"
+    
+    import random
+    mock_id = random.randint(10000, 99999)
+    
+    target_data = {
+        "id": mock_id,
+        "url": normalized_url,
+        "technologies": tech_stack,
+        "subdomains": [],
+        "vuln_status": status,
+        "last_scan": datetime.utcnow().isoformat(),
+        "potential_vulns": risk_count
+    }
+
+    # 2. Correlate CVEs
+    correlations = []
+    summary = ""
+    hardening = {}
+    
+    if tech_stack:
+        keywords = []
+        for tech_name, tech_info in tech_stack.items():
+            version = tech_info.get("version")
+            if version:
+                 keywords.append(f"{tech_name} {version}")
+                 keywords.append(tech_name)
+            else:
+                 keywords.append(tech_name)
+                
+        if keywords:
+            vulns = cve_searcher.search(keywords)
+            enriched_vulns = []
+            for vuln in vulns:
+                cve_id = vuln.get("cve_id") or vuln.get("id")
+                explanation = build_correlation_explanation(vuln)
+                enriched_vulns.append({
+                    **vuln,
+                    "cve_id": cve_id,
+                    **explanation,
+                    "remediation": remediation_engine.for_cve(vuln),
+                })
+            
+            prioritized_vulns = remediation_engine.prioritize(enriched_vulns)
+            correlations = prioritized_vulns
+            summary = remediation_engine.summarize_target(prioritized_vulns)
+            hardening = remediation_engine.baseline(tech_stack)
+
+    # Add correlations inside target_data so frontend can easily store it together
+    target_data["correlations"] = correlations
+
+    return {
+        "target": target_data,
+        "correlations": correlations,
+        "summary": summary,
+        "hardening": hardening,
+    }
+
+
 @router.get("", response_model=List[TargetResponse])
 @router.get("/", response_model=List[TargetResponse])
 def get_targets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
