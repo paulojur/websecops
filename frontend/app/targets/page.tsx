@@ -3,8 +3,8 @@
 import { ShieldAlert, Globe, Search, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getTargets, addTarget, deleteTarget } from '@/lib/api';
-import { AppMode, deleteDemoTarget, getAppMode, getDemoTargets, setAppMode, upsertDemoTarget } from '@/lib/demo-targets';
+import { getTargets, addTarget, deleteTarget, analyzeTarget } from '@/lib/api';
+import { AppMode, deleteDemoTarget, getAppMode, getDemoTargets, setAppMode, saveDemoTarget } from '@/lib/demo-targets';
 
 export default function TargetsPage() {
     const [targets, setTargets] = useState([]);
@@ -32,13 +32,21 @@ export default function TargetsPage() {
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newTarget) return;
-        if (appMode === 'demo') {
-            upsertDemoTarget(newTarget);
-        } else {
-            await addTarget(newTarget);
+        setLoading(true);
+        try {
+            if (appMode === 'demo') {
+                const data = await analyzeTarget(newTarget);
+                saveDemoTarget(data.target);
+            } else {
+                await addTarget(newTarget);
+            }
+            setNewTarget('');
+            await loadTargets(appMode);
+        } catch (error) {
+            console.error("Failed to add target", error);
+            alert("Falha ao adicionar alvo.");
+            setLoading(false);
         }
-        setNewTarget('');
-        loadTargets(appMode);
     };
 
     const handleModeChange = (mode: AppMode) => {

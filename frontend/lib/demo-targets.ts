@@ -51,3 +51,8 @@ export function deleteDemoTarget(id: number) {
     const filtered = targets.filter((t: any) => t.id !== id);
     localStorage.setItem(DEMO_TARGETS_KEY, JSON.stringify(filtered));
 }
+
+export function getDemoTarget(id: number): any {
+    const targets = getDemoTargets();
+    return targets.find((t: any) => t.id === id) || null;
+}
