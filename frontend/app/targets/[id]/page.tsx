@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ShieldAlert, ArrowLeft, Loader2, AlertTriangle, ExternalLink, ClipboardList, Wrench, FileDown } from 'lucide-react';
-import { getTargetCorrelations } from '@/lib/api';
+import { getTargetCorrelations, getTargetHistory } from '@/lib/api';
 import { exportTargetCorrelationsCSV, exportTargetCorrelationsPDF } from '@/lib/export';
 import Link from 'next/link';
 import { getAppMode, getDemoTarget } from '@/lib/demo-targets';
@@ -90,6 +90,7 @@ export default function TargetDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [data, setData] = useState<TargetDetailsData | null>(null);
+    const [history, setHistory] = useState<any[]>([]);
     const [appMode, setAppMode] = useState<'live' | 'demo'>('live');
 
     useEffect(() => {
@@ -122,6 +123,13 @@ export default function TargetDetailsPage() {
 
                 const result = await getTargetCorrelations(parseInt(id));
                 setData(result);
+                
+                try {
+                    const hist = await getTargetHistory(parseInt(id));
+                    setHistory(hist);
+                } catch (e) {
+                    console.error("No history available or error", e);
+                }
             } catch (err: unknown) {
                 setError(err instanceof Error ? err.message : 'Erro ao carregar detalhes do alvo.');
             } finally {
@@ -210,6 +218,40 @@ export default function TargetDetailsPage() {
                     )}
                 </div>
             </div>
+
+            {/* Histórico de Scans */}
+            {appMode === 'live' && history.length > 0 && (
+                <div className="bg-black/40 border border-white/10 p-6 rounded-lg">
+                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <ClipboardList className="w-5 h-5 text-cyber-secondary" />
+                        Histórico de Scans (DAST)
+                    </h2>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-white/5 text-gray-400">
+                                <tr>
+                                    <th className="px-4 py-3 rounded-tl">Data do Scan</th>
+                                    <th className="px-4 py-3">Tipo</th>
+                                    <th className="px-4 py-3">Críticos</th>
+                                    <th className="px-4 py-3">Altos</th>
+                                    <th className="px-4 py-3 rounded-tr">Médios</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {history.map((h: any) => (
+                                    <tr key={h.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                        <td className="px-4 py-3 text-gray-300">{new Date(h.created_at).toLocaleString()}</td>
+                                        <td className="px-4 py-3 font-mono text-xs uppercase text-cyber-secondary">{h.scan_type}</td>
+                                        <td className="px-4 py-3 font-bold text-red-500">{h.summary?.CRITICAL || 0}</td>
+                                        <td className="px-4 py-3 font-bold text-orange-500">{h.summary?.HIGH || 0}</td>
+                                        <td className="px-4 py-3 font-bold text-yellow-500">{h.summary?.MEDIUM || 0}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             {/* Vulnerabilidades */}
             <div>

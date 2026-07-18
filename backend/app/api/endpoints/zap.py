@@ -108,3 +108,49 @@ def get_scan_results(target_url: str, db: Session = Depends(get_db)):
     # 3. Generate Report (Coverage)
     report = scanner.get_full_report(target_url, alerts_list)
     return {**alerts_data, **report}
+
+from pydantic import BaseModel
+class SaveHistoryRequest(BaseModel):
+    target_url: str
+    scan_type: str
+
+from app.models.models import ScanHistory
+import datetime
+
+@router.post("/save-history")
+def save_scan_history(req: SaveHistoryRequest, db: Session = Depends(get_db)):
+    """
+    Fetches the current results for a target and saves them into the ScanHistory table.
+    Filters to only keep High and Medium severity to save space.
+    """
+    target = db.query(Target).filter(Target.url == req.target_url).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found in DB")
+        
+    results = get_scan_results(req.target_url, db)
+    alerts = results.get("alerts", [])
+    
+    # Filter for Critical, High, Medium
+    important_alerts = [a for a in alerts if a.get("risk", "").upper() in ["CRITICAL", "HIGH", "MEDIUM"]]
+    
+    # Count them
+    summary = {
+        "CRITICAL": sum(1 for a in important_alerts if a.get("risk", "").upper() == "CRITICAL"),
+        "HIGH": sum(1 for a in important_alerts if a.get("risk", "").upper() == "HIGH"),
+        "MEDIUM": sum(1 for a in important_alerts if a.get("risk", "").upper() == "MEDIUM")
+    }
+    
+    history_entry = ScanHistory(
+        target_id=target.id,
+        scan_type=req.scan_type,
+        created_at=datetime.datetime.utcnow(),
+        summary=summary,
+        critical_findings=important_alerts
+    )
+    
+    db.add(history_entry)
+    db.commit()
+    db.refresh(history_entry)
+    
+    return {"status": "success", "history_id": history_entry.id}
+

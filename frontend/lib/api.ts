@@ -78,4 +78,15 @@ export const getScanResults = async (url: string) => {
     return response.data;
 }
 
+export const saveScanHistory = async (url: string, type: string) => {
+    const response = await api.post(`/zap/save-history`, { target_url: url, scan_type: type });
+    return response.data;
+}
+
+export const getTargetHistory = async (id: number) => {
+    const response = await api.get(`/targets/${id}/history`);
+    return response.data;
+}
+
+
 export default api;

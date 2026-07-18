@@ -2,7 +2,7 @@
 
 import { Zap, Play, Activity, ShieldCheck, FileDown, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
-import { startSpiderScan, startActiveScan, checkScanStatus, getScanResults } from '@/lib/api';
+import { startSpiderScan, startActiveScan, checkScanStatus, getScanResults, saveScanHistory } from '@/lib/api';
 import { exportScanResultsCSV, exportScanResultsPDF } from '@/lib/export';
 
 type ScanStatus = {
@@ -139,7 +139,15 @@ export default function ScansPage() {
                     clearInterval(interval);
                     addLog('Scan concluído!');
                     setScanStatus((prev) => prev ? { ...prev, status: 'completed', progress: 100 } : prev);
-                    loadResults();
+                    await loadResults();
+                    // Save history
+                    try {
+                        addLog('Salvando histórico de vulnerabilidades...');
+                        await saveScanHistory(targetUrl, type);
+                        addLog('Histórico salvo com sucesso!');
+                    } catch (err) {
+                        addLog('Falha ao salvar o histórico. O alvo está cadastrado no sistema?');
+                    }
                 }
             } catch (e) {
                 console.error(e);
@@ -215,9 +223,39 @@ ${remediation?.why_it_matters ? `\n*Por que importa:* ${remediation.why_it_matte
 h2. Evidência
 ${remediation?.evidence || alert.evidence || 'N/A'}
 `;
-        navigator.clipboard.writeText(text);
-        setCopiedId(alert.alert);
-        setTimeout(() => setCopiedId(null), 2000);
+        
+        const copyToClipboard = () => {
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text);
+            } else {
+                return new Promise<void>((resolve, reject) => {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed";
+                    textArea.style.left = "-999999px";
+                    textArea.style.top = "-999999px";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    } finally {
+                        textArea.remove();
+                    }
+                });
+            }
+        };
+
+        copyToClipboard().then(() => {
+            setCopiedId(alert.alert);
+            setTimeout(() => setCopiedId(null), 2000);
+        }).catch(err => {
+            console.error('Falha ao copiar:', err);
+            alert('Falha ao copiar. Verifique as permissões do navegador.');
+        });
     };
 
     return (
@@ -281,7 +319,7 @@ ${remediation?.evidence || alert.evidence || 'N/A'}
 
                             <button
                                 type="submit"
-                                disabled={!!scanStatus || !targetUrl}
+                                disabled={(scanStatus && scanStatus.status !== 'completed') || !targetUrl}
                                 className="w-full bg-cyber-primary text-black font-bold py-3 rounded hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {scanStatus && scanStatus.status === 'scanning' ? 'ESCANEANDO...' : 'INICIAR SCAN'}
@@ -508,7 +546,7 @@ ${remediation?.evidence || alert.evidence || 'N/A'}
                                 </div>
                                 {(alert.remediations?.length ?? 0) > 0 && (
                                     <div className="mt-4 space-y-3">
-                                        {(alert.remediations ?? []).map((item, idx) => (
+                                        {(alert.remediations ?? []).map((item: AlertRemediation, idx: number) => (
                                             <div key={idx} className="bg-black/30 border border-white/10 rounded p-3">
                                                 <div className="flex flex-wrap justify-between gap-2 mb-2">
                                                     <h4 className="text-sm font-bold text-cyber-secondary">{item.title}</h4>

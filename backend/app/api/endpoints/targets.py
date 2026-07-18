@@ -325,3 +325,17 @@ def delete_target(target_id: int, db: Session = Depends(get_db)):
     db.delete(target)
     db.commit()
     return None
+
+from app.models.models import ScanHistory
+
+@router.get("/{target_id}/history")
+def get_target_scan_history(target_id: int, db: Session = Depends(get_db)):
+    """
+    Get the ZAP scan history for a specific target.
+    """
+    target = db.query(Target).filter(Target.id == target_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Target not found")
+        
+    history = db.query(ScanHistory).filter(ScanHistory.target_id == target_id).order_by(ScanHistory.created_at.desc()).all()
+    return history

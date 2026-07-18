@@ -43,3 +43,13 @@ class Intelligence(Base):
     published_date = Column(DateTime(timezone=True))
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class ScanHistory(Base):
+    __tablename__ = "scan_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    target_id = Column(Integer, index=True)
+    scan_type = Column(String) # 'spider', 'active'
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    summary = Column(JSON, default={}) # e.g. {"High": 2, "Medium": 5}
+    critical_findings = Column(JSON, default=[]) # The array of alerts
