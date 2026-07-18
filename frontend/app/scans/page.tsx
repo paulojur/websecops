@@ -1,6 +1,6 @@
 'use client';
 
-import { Zap, Play, Activity, ShieldCheck, FileDown } from 'lucide-react';
+import { Zap, Play, Activity, ShieldCheck, FileDown, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import { startSpiderScan, startActiveScan, checkScanStatus, getScanResults } from '@/lib/api';
 import { exportScanResultsCSV, exportScanResultsPDF } from '@/lib/export';
@@ -75,8 +75,8 @@ export default function ScansPage() {
     const [triage, setTriage] = useState<ScanTriage | null>(null);
     const [riskFilter, setRiskFilter] = useState('ALL');
     const [viewMode, setViewMode] = useState<'alerts' | 'coverage'>('alerts');
-
     const [sourceFilter, setSourceFilter] = useState<'ALL' | 'STATIC' | 'DYNAMIC'>('ALL');
+    const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const addLog = (msg: string) => setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
 
@@ -175,6 +175,50 @@ export default function ScansPage() {
 
         return true;
     });
+
+    const groupedResults = Object.values(
+        (filteredResults || []).reduce((acc: Record<string, any>, alert: ScanAlert) => {
+            const key = alert.alert;
+            if (!acc[key]) {
+                acc[key] = {
+                    ...alert,
+                    occurrences: 1,
+                    urls: [alert.url],
+                };
+            } else {
+                acc[key].occurrences += 1;
+                if (!acc[key].urls.includes(alert.url)) {
+                    acc[key].urls.push(alert.url);
+                }
+            }
+            return acc;
+        }, {})
+    ).sort((a: any, b: any) => b.occurrences - a.occurrences);
+
+    const handleCopyJira = (alert: any) => {
+        const remediation = alert.remediations?.[0];
+        
+        const text = `h1. [Vulnerabilidade] ${alert.alert}
+
+*Gravidade:* ${alert.risk}
+*Origem:* ${alert.sourceid === 'static_analysis' ? 'Análise Estática' : 'ZAP Scanner'}
+*Afeta:* ${alert.occurrences} ocorrência(s) (${alert.urls.length} URLs únicas)
+*Exemplo URL:* ${alert.method} ${alert.urls[0]}
+
+h2. Descrição
+${alert.description}
+
+h2. Solução Recomendada
+${remediation?.recommendation || 'Consultar documentação técnica.'}
+${remediation?.why_it_matters ? `\n*Por que importa:* ${remediation.why_it_matters}` : ''}
+
+h2. Evidência
+${remediation?.evidence || alert.evidence || 'N/A'}
+`;
+        navigator.clipboard.writeText(text);
+        setCopiedId(alert.alert);
+        setTimeout(() => setCopiedId(null), 2000);
+    };
 
     return (
         <div className="p-8 space-y-8 h-full flex flex-col">
@@ -406,7 +450,7 @@ export default function ScansPage() {
                             </div>
                         )}
 
-                        {viewMode === 'alerts' && filteredResults && filteredResults.map((alert, i) => (
+                        {viewMode === 'alerts' && groupedResults && groupedResults.map((alert: any, i: number) => (
                             <div key={i} className={`bg-white/5 border-l-4 p-4 rounded-r ${alert.risk === 'High' ? 'border-red-500' :
                                 alert.risk === 'Medium' ? 'border-orange-500' :
                                     alert.risk === 'Low' ? 'border-yellow-500' : 'border-blue-500'
@@ -415,7 +459,12 @@ export default function ScansPage() {
                                     <div className="flex flex-col gap-1">
                                         <h3 className={`font-bold ${alert.risk === 'High' ? 'text-red-400' :
                                             alert.risk === 'Medium' ? 'text-orange-400' : 'text-gray-200'
-                                            }`}>{alert.alert}</h3>
+                                            }`}>
+                                            {alert.alert}
+                                            <span className="text-gray-400 font-normal ml-2 text-sm">
+                                                ({alert.occurrences} {alert.occurrences === 1 ? 'ocorrência' : 'ocorrências'})
+                                            </span>
+                                        </h3>
 
                                         {/* Source Badge */}
                                         <div className="flex gap-2 mt-1">
@@ -431,16 +480,31 @@ export default function ScansPage() {
                                         </div>
                                     </div>
 
-                                    <span className={`text-xs px-2 py-1 rounded border uppercase font-bold ${alert.risk === 'High' ? 'bg-red-500/20 text-red-500 border-red-500/30' :
-                                        alert.risk === 'Medium' ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' :
-                                            'bg-blue-500/20 text-blue-500 border-blue-500/30'
-                                        }`}>
-                                        {alert.risk}
-                                    </span>
+                                    <div className="flex gap-2 items-center">
+                                        <button
+                                            onClick={() => handleCopyJira(alert)}
+                                            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-gray-300"
+                                            title="Copiar Ticket (Jira/Markdown)"
+                                        >
+                                            {copiedId === alert.alert ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                                            {copiedId === alert.alert ? 'Copiado!' : 'Copiar Ticket'}
+                                        </button>
+                                        <span className={`text-xs px-2 py-1 rounded border uppercase font-bold ${alert.risk === 'High' ? 'bg-red-500/20 text-red-500 border-red-500/30' :
+                                            alert.risk === 'Medium' ? 'bg-orange-500/20 text-orange-500 border-orange-500/30' :
+                                                'bg-blue-500/20 text-blue-500 border-blue-500/30'
+                                            }`}>
+                                            {alert.risk}
+                                        </span>
+                                    </div>
                                 </div>
                                 <p className="text-sm text-gray-300 mt-2">{alert.description}</p>
-                                <div className="mt-3 text-xs text-gray-500 font-mono bg-black/30 p-2 rounded truncate max-w-full">
-                                    {alert.method} {alert.url}
+                                <div className="mt-3 text-xs text-gray-500 font-mono bg-black/30 p-2 rounded max-w-full overflow-hidden">
+                                    <div><span className="font-bold text-gray-400">Exemplo Afetado:</span> {alert.method} {alert.urls[0]}</div>
+                                    {alert.urls.length > 1 && (
+                                        <div className="mt-2 pt-2 border-t border-white/5 text-cyber-primary cursor-pointer hover:underline">
+                                            + {alert.urls.length - 1} URLs similares afetadas. Copie o ticket para ver tudo.
+                                        </div>
+                                    )}
                                 </div>
                                 {(alert.remediations?.length ?? 0) > 0 && (
                                     <div className="mt-4 space-y-3">
