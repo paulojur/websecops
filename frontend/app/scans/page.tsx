@@ -151,11 +151,15 @@ export default function ScansPage() {
                     clearInterval(interval);
                     addLog('Scan concluído!');
                     setScanStatus((prev) => prev ? { ...prev, status: 'completed', progress: 100 } : prev);
-                    await loadResults();
+                    const resultsData = await loadResults(type, id);
                     // Save history
                     try {
                         addLog('Salvando histórico de vulnerabilidades...');
-                        await saveScanHistory(targetUrl, type);
+                        if (type === 'nuclei' && resultsData?.alerts) {
+                            await saveScanHistory(targetUrl, type, resultsData.alerts);
+                        } else {
+                            await saveScanHistory(targetUrl, type);
+                        }
                         addLog('Histórico salvo com sucesso!');
                     } catch (err) {
                         addLog('Falha ao salvar o histórico. O alvo está cadastrado no sistema?');
@@ -168,12 +172,16 @@ export default function ScansPage() {
         }, 5000);
     };
 
-    const loadResults = async () => {
+    const loadResults = async (type?: string, id?: string) => {
         try {
             addLog('Buscando resultados...');
             let data;
-            if (scanStatus?.type === 'nuclei') {
-                const raw = await getNucleiResults(scanStatus.id!);
+            
+            const currentType = type || scanStatus?.type;
+            const currentId = id || scanStatus?.id;
+            
+            if (currentType === 'nuclei' && currentId) {
+                const raw = await getNucleiResults(currentId);
                 // Transform Nuclei format into ZAP format for UI compatibility
                 const transformedAlerts = (raw.alerts || []).map((alert: any) => ({
                     alert: alert.info?.name || 'Nuclei Finding',
@@ -202,8 +210,10 @@ export default function ScansPage() {
             setCoverage(data.coverage || []);
             setTriage(data.triage || null);
             addLog(`${data.alerts?.length || 0} alertas encontrados.`);
+            return data;
         } catch {
             addLog('Falha ao carregar resultados.');
+            return null;
         }
     };
 

@@ -111,9 +111,12 @@ def get_scan_results(target_url: str, db: Session = Depends(get_db)):
     return {**alerts_data, **report}
 
 from pydantic import BaseModel
+from typing import List, Optional
+
 class SaveHistoryRequest(BaseModel):
     target_url: str
     scan_type: str
+    alerts: Optional[List[dict]] = None
 
 from app.models.models import ScanHistory
 import datetime
@@ -128,8 +131,14 @@ def save_scan_history(req: SaveHistoryRequest, db: Session = Depends(get_db), ap
     if not target:
         raise HTTPException(status_code=404, detail="Target not found in DB")
         
-    results = get_scan_results(req.target_url, db)
-    alerts = results.get("alerts", [])
+    alerts = req.alerts
+    if alerts is None:
+        try:
+            results = get_scan_results(req.target_url, db)
+            alerts = results.get("alerts", [])
+        except Exception as e:
+            print(f"Error fetching results from ZAP: {e}")
+            alerts = []
     
     # Filter for Critical, High, Medium
     important_alerts = [a for a in alerts if a.get("risk", "").upper() in ["CRITICAL", "HIGH", "MEDIUM"]]
