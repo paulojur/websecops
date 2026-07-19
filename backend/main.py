@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import vulnerabilities, intelligence, zap, targets
+from app.api.endpoints import vulnerabilities, intelligence, zap, targets, nuclei
 from app.core.database import engine, Base
 from app.models import models
 from app.core.logging_config import setup_logging
@@ -27,6 +27,7 @@ app.include_router(vulnerabilities.router, prefix="/api/v1/vulnerabilities", tag
 app.include_router(intelligence.router, prefix="/api/v1/intelligence", tags=["intelligence"])
 app.include_router(zap.router, prefix="/api/v1/zap", tags=["zap"])
 app.include_router(targets.router, prefix="/api/v1/targets", tags=["targets"])
+app.include_router(nuclei.router, prefix="/api/v1/nuclei", tags=["nuclei"])
 
 @app.get("/")
 def read_root():
