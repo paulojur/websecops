@@ -1,7 +1,7 @@
 'use client';
 
 import { Zap, Play, Activity, ShieldCheck, FileDown, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { startSpiderScan, startActiveScan, checkScanStatus, getScanResults, saveScanHistory } from '@/lib/api';
 import { exportScanResultsCSV, exportScanResultsPDF } from '@/lib/export';
 
