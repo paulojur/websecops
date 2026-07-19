@@ -13,6 +13,8 @@ from ...services.tech_detector import TechDetector
 from ...services.cve_searcher import CVESearcher
 from ...services.asm_recon import ASMRecon
 from ...services.remediation_engine import RemediationEngine
+from ...core.security import verify_api_key
+import time
 
 router = APIRouter()
 detector = TechDetector()
@@ -131,7 +133,7 @@ def build_correlation_explanation(vuln: Dict[str, Any]) -> Dict[str, str]:
     }
 
 @router.post("/scan", response_model=TargetResponse)
-def add_and_scan_target(target_in: TargetCreate, db: Session = Depends(get_db)):
+def add_and_scan_target(target_in: TargetCreate, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     """
     Scans a new target URL (Passive) and saves/updates it in the database.
     Falls back gracefully when Wappalyzer or subdomain discovery fails.
@@ -180,12 +182,34 @@ def add_and_scan_target(target_in: TargetCreate, db: Session = Depends(get_db)):
         new_target.potential_vulns = risk_count
         return new_target
 
+# Rate Limit Cache: IP/Client -> (timestamps)
+_rate_limit_cache: Dict[str, List[float]] = {}
+RATE_LIMIT_MAX_REQUESTS = 5
+RATE_LIMIT_WINDOW_SECONDS = 60
+
+from fastapi import Request
+
 @router.post("/analyze")
-def analyze_target(target_in: TargetCreate, db: Session = Depends(get_db)):
+def analyze_target(target_in: TargetCreate, request: Request, db: Session = Depends(get_db)):
     """
     Stateless endpoint for Demo Mode.
     Scans the target, detects technologies, and correlates CVEs without saving to the DB.
+    Includes simple in-memory rate limiting.
     """
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    
+    # Clean old requests
+    if client_ip in _rate_limit_cache:
+        _rate_limit_cache[client_ip] = [t for t in _rate_limit_cache[client_ip] if now - t < RATE_LIMIT_WINDOW_SECONDS]
+    else:
+        _rate_limit_cache[client_ip] = []
+        
+    if len(_rate_limit_cache[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Please try again later.")
+        
+    _rate_limit_cache[client_ip].append(now)
+
     normalized_url = normalize_url(target_in.url)
 
     # 1. Detect Technologies
@@ -314,7 +338,7 @@ def get_target_correlations(target_id: int, db: Session = Depends(get_db)):
     }
 
 @router.delete("/{target_id}", status_code=204)
-def delete_target(target_id: int, db: Session = Depends(get_db)):
+def delete_target(target_id: int, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     """
     Delete a target from the tracking list.
     """

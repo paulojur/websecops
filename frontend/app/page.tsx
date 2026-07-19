@@ -19,10 +19,12 @@ export default function Home() {
   const [loadingCorrelations, setLoadingCorrelations] = useState(false);
   const [riskFilter, setRiskFilter] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [appMode, setAppModeState] = useState<AppMode>('demo');
 
   useEffect(() => {
     setAppModeState(getAppMode());
+    setIsAdmin(!!localStorage.getItem('admin_api_key'));
   }, []);
   useEffect(() => {
     async function fetchData(mode: AppMode) {
@@ -131,6 +133,9 @@ export default function Home() {
       alert('Database synchronization started. It may take a few moments to reflect changes.');
       // Refresh all data
       const v = await getVulnerabilities(10);
+      const mode = getAppMode();
+      setAppModeState(mode);
+      setIsAdmin(!!localStorage.getItem('admin_api_key'));
       const s = await getStats();
       setVulns(v);
       setStats(s);
@@ -243,12 +248,16 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-4 text-xs font-mono">
           <div className="flex items-center gap-2 bg-cyber-panel border border-white/10 rounded px-2 py-1">
-            <button
-              onClick={() => { setAppMode('live'); setAppModeState('live'); }}
-              className={`px-3 py-1 rounded uppercase tracking-wider transition-colors ${appMode === 'live' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
-            >
-              LIVE
-            </button>
+            {isAdmin ? (
+                <button
+                  onClick={() => { setAppMode('live'); setAppModeState('live'); }}
+                  className={`px-3 py-1 rounded uppercase tracking-wider transition-colors ${appMode === 'live' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
+                >
+                  LIVE
+                </button>
+            ) : (
+                <span className="px-3 py-1 rounded uppercase tracking-wider text-gray-500 line-through" title="Admin only">LIVE</span>
+            )}
             <button
               onClick={() => { setAppMode('demo'); setAppModeState('demo'); }}
               className={`px-3 py-1 rounded uppercase tracking-wider transition-colors ${appMode === 'demo' ? 'bg-cyber-secondary text-black' : 'text-gray-400 hover:text-white'}`}
@@ -263,14 +272,16 @@ export default function Home() {
           <div className="bg-cyber-panel border border-white/10 px-4 py-2 rounded">
             v2.1.0-DEV
           </div>
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="flex items-center gap-2 bg-cyber-panel border border-white/10 px-4 py-2 rounded hover:bg-white/5 transition-colors text-xs font-mono uppercase tracking-wider hover:text-cyber-primary"
-          >
-            <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'UPDATING...' : 'SYNC DB'}
-          </button>
+          {isAdmin && (
+              <button
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="flex items-center gap-2 bg-cyber-panel border border-white/10 px-4 py-2 rounded hover:bg-white/5 transition-colors text-xs font-mono uppercase tracking-wider hover:text-cyber-primary"
+              >
+                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'UPDATING...' : 'SYNC DB'}
+              </button>
+          )}
         </div>
       </header>
 

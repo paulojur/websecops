@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: "Advanced Security Monitoring Platform",
 };
 
+import AdminLogin from "@/components/AdminLogin";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,6 +34,7 @@ export default function RootLayout({
         <main className="flex-1 relative overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-cyber-primary/10 scrollbar-track-transparent">
           {children}
         </main>
+        <AdminLogin />
       </body>
     </html>
   );

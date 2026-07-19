@@ -7,6 +7,16 @@ const api = axios.create({
     },
 });
 
+api.interceptors.request.use((config) => {
+    if (typeof window !== 'undefined') {
+        const apiKey = localStorage.getItem('admin_api_key');
+        if (apiKey) {
+            config.headers['X-API-Key'] = apiKey;
+        }
+    }
+    return config;
+});
+
 export const getVulnerabilities = async (limit = 20) => {
     const response = await api.get(`/vulnerabilities/?limit=${limit}`);
     return response.data;

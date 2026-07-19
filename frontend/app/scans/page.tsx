@@ -77,6 +77,11 @@ export default function ScansPage() {
     const [viewMode, setViewMode] = useState<'alerts' | 'coverage'>('alerts');
     const [sourceFilter, setSourceFilter] = useState<'ALL' | 'STATIC' | 'DYNAMIC'>('ALL');
     const [copiedId, setCopiedId] = useState<string | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        setIsAdmin(!!localStorage.getItem('admin_api_key'));
+    }, []);
 
     const addLog = (msg: string) => setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
 
@@ -305,21 +310,24 @@ ${remediation?.evidence || alert.evidence || 'N/A'}
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setScanType('active')}
-                                        className={`p-3 rounded border text-sm font-bold transition-colors ${scanType === 'active'
+                                        onClick={() => {
+                                            if (isAdmin) setScanType('active');
+                                            else alert('O Active Scan (Intrusivo) está desabilitado para visitantes por segurança. Use a Master API Key.');
+                                        }}
+                                        className={`p-3 rounded border text-sm font-bold transition-colors ${!isAdmin ? 'opacity-50 cursor-not-allowed bg-white/5 border-white/10 text-gray-500' : scanType === 'active'
                                             ? 'bg-red-500/20 border-red-500 text-red-500'
                                             : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
                                             }`}
                                     >
                                         🔥 Active (Intrusivo)
-                                        <span className="block text-[10px] font-normal opacity-70 mt-1">Ataques Simulados</span>
+                                        <span className="block text-[10px] font-normal opacity-70 mt-1">{!isAdmin ? 'Restrito' : 'Ataques Simulados'}</span>
                                     </button>
                                 </div>
                             </div>
 
                             <button
                                 type="submit"
-                                disabled={(scanStatus && scanStatus.status !== 'completed') || !targetUrl}
+                                disabled={(scanStatus && scanStatus.status !== 'completed') || !targetUrl || (!isAdmin && scanType === 'active')}
                                 className="w-full bg-cyber-primary text-black font-bold py-3 rounded hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {scanStatus && scanStatus.status === 'scanning' ? 'ESCANEANDO...' : 'INICIAR SCAN'}

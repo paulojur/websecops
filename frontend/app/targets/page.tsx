@@ -11,10 +11,12 @@ export default function TargetsPage() {
     const [loading, setLoading] = useState(true);
     const [newTarget, setNewTarget] = useState('');
     const [appMode, setAppModeState] = useState<AppMode>('live');
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
         const mode = getAppMode();
         setAppModeState(mode);
+        setIsAdmin(!!localStorage.getItem('admin_api_key'));
         loadTargets(mode);
     }, []);
 
@@ -67,7 +69,11 @@ export default function TargetsPage() {
                 </div>
                 <div className="flex items-center gap-3 text-xs font-mono text-gray-500">
                     <div className="flex items-center gap-1 bg-cyber-panel border border-white/10 rounded px-2 py-1">
-                        <button onClick={() => handleModeChange('live')} className={`px-2 py-1 rounded ${appMode === 'live' ? 'bg-cyber-primary text-black' : 'text-gray-400'}`}>LIVE</button>
+                        {isAdmin ? (
+                            <button onClick={() => handleModeChange('live')} className={`px-2 py-1 rounded ${appMode === 'live' ? 'bg-cyber-primary text-black' : 'text-gray-400'}`}>LIVE</button>
+                        ) : (
+                            <span className="px-2 py-1 rounded text-gray-500 line-through" title="Admin only">LIVE</span>
+                        )}
                         <button onClick={() => handleModeChange('demo')} className={`px-2 py-1 rounded ${appMode === 'demo' ? 'bg-cyber-secondary text-black' : 'text-gray-400'}`}>DEMO</button>
                     </div>
                     <div>{targets.length} ALVOS ATIVOS</div>
