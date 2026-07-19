@@ -2,7 +2,7 @@
 
 import { Zap, Play, Activity, ShieldCheck, FileDown, Copy, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { startSpiderScan, startActiveScan, checkScanStatus, getScanResults, saveScanHistory } from '@/lib/api';
+import { startSpiderScan, startActiveScan, checkScanStatus, getScanResults, saveScanHistory, startNucleiScan, checkNucleiStatus, getNucleiResults } from '@/lib/api';
 import { exportScanResultsCSV, exportScanResultsPDF } from '@/lib/export';
 
 type ScanStatus = {
@@ -100,6 +100,8 @@ export default function ScansPage() {
             let data;
             if (scanType === 'spider') {
                 data = await startSpiderScan(targetUrl);
+            } else if (scanType === 'nuclei') {
+                data = await startNucleiScan(targetUrl);
             } else {
                 if (!confirm('ATENÇÃO: O Scan Ativo envia payloads de teste que podem ser interpretados como ataque. Você tem autorização para escanear este alvo?')) {
                     setScanStatus(null);
@@ -126,7 +128,12 @@ export default function ScansPage() {
     const pollStatus = async (type: string, id: string) => {
         const interval = setInterval(async () => {
             try {
-                const data = await checkScanStatus(type, id);
+                let data;
+                if (type === 'nuclei') {
+                    data = await checkNucleiStatus(id);
+                } else {
+                    data = await checkScanStatus(type, id);
+                }
                 setScanStatus((prev) => prev ? { ...prev, progress: data.progress } : prev);
 
                 // Show real-time activity in logs
@@ -164,7 +171,33 @@ export default function ScansPage() {
     const loadResults = async () => {
         try {
             addLog('Buscando resultados...');
-            const data = await getScanResults(targetUrl);
+            let data;
+            if (scanStatus?.type === 'nuclei') {
+                const raw = await getNucleiResults(scanStatus.id!);
+                // Transform Nuclei format into ZAP format for UI compatibility
+                const transformedAlerts = (raw.alerts || []).map((alert: any) => ({
+                    alert: alert.info?.name || 'Nuclei Finding',
+                    risk: alert.info?.severity || 'Low',
+                    confidence: 'Medium',
+                    description: alert.info?.description || 'No description provided by Nuclei template.',
+                    method: 'GET',
+                    url: alert.matched_at || targetUrl,
+                    sourceid: 'nuclei',
+                    evidence: alert.extracted_results ? alert.extracted_results.join(', ') : '',
+                    remediations: [{
+                        title: alert.info?.name || 'Finding',
+                        category: alert.type || 'vuln',
+                        confidence: 'Medium',
+                        evidence: alert.matched_at || '',
+                        recommendation: alert.info?.remediation || 'Investigate the matched signature.',
+                        report_text: alert.info?.description || ''
+                    }]
+                }));
+                data = { alerts: transformedAlerts, coverage: [], triage: null };
+            } else {
+                data = await getScanResults(targetUrl);
+            }
+            
             setResults(data.alerts || []);
             setCoverage(data.coverage || []);
             setTriage(data.triage || null);
@@ -296,7 +329,18 @@ ${remediation?.evidence || alert.evidence || 'N/A'}
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 mb-1 uppercase">Modo de Scan</label>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setScanType('nuclei')}
+                                        className={`p-3 rounded border text-sm font-bold transition-colors ${scanType === 'nuclei'
+                                            ? 'bg-blue-500/20 border-blue-500 text-blue-400'
+                                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        ⚡ Recon (Nuclei)
+                                        <span className="block text-[10px] font-normal opacity-70 mt-1">Footprint & CVEs</span>
+                                    </button>
                                     <button
                                         type="button"
                                         onClick={() => setScanType('spider')}

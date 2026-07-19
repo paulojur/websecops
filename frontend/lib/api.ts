@@ -99,4 +99,19 @@ export const getTargetHistory = async (id: number) => {
 }
 
 
-export default api;
+// Nuclei / Scan related
+export const startNucleiScan = async (url: string) => {
+    const response = await api.post(`/nuclei/scan`, { url });
+    return response.data;
+}
+
+export const checkNucleiStatus = async (id: string) => {
+    const response = await api.get(`/nuclei/status`, { params: { scanId: id } });
+    return response.data;
+}
+
+export const getNucleiResults = async (id: string) => {
+    const response = await api.get(`/nuclei/results`, { params: { scanId: id } });
+    return response.data;
+}
+

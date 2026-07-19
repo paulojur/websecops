@@ -38,7 +38,12 @@ export default function TargetsPage() {
         try {
             if (appMode === 'demo') {
                 const data = await analyzeTarget(newTarget);
-                saveDemoTarget(data.target);
+                saveDemoTarget({
+                    ...data.target,
+                    correlations: data.correlations || [],
+                    summary: data.summary || {},
+                    hardening: data.hardening || {}
+                });
             } else {
                 await addTarget(newTarget);
             }

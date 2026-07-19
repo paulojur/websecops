@@ -46,7 +46,7 @@ export default function AdminLogin() {
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-4 right-4 p-2 rounded-full bg-black/50 border border-white/10 hover:bg-white/10 transition-colors z-50 group"
+                className="fixed top-8 right-8 p-2 rounded-full bg-black/50 border border-white/10 hover:bg-white/10 transition-colors z-50 group"
                 title={isLoggedIn ? "Admin Mode Ativo" : "Visitor Mode"}
             >
                 {isLoggedIn ? (
