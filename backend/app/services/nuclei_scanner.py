@@ -32,7 +32,11 @@ class NucleiScanner:
         command = [
             "nuclei",
             "-u", target_url,
-            "-jsonl"
+            "-jsonl",
+            "-c", "5",         # Reduce concurrency to 5 templates (default 25)
+            "-bs", "2",        # Reduce bulk size to 2 (default 25)
+            "-rl", "20",       # Rate limit to 20 reqs/sec (default 150)
+            "-fr"              # Follow redirects (often needed for full coverage)
         ]
 
         try:
