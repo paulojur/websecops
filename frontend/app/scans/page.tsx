@@ -566,11 +566,14 @@ ${remediation?.evidence || alert.evidence || 'N/A'}
                                             </span>
                                         </h3>
 
-                                        {/* Source Badge */}
                                         <div className="flex gap-2 mt-1">
                                             {alert.sourceid === 'static_analysis' ? (
                                                 <span className="text-[10px] px-1.5 py-0.5 rounded border uppercase font-bold bg-blue-500/20 text-blue-400 border-blue-500/30 w-fit">
                                                     Static Analysis
+                                                </span>
+                                            ) : alert.sourceid === 'nuclei' ? (
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded border uppercase font-bold bg-yellow-500/20 text-yellow-400 border-yellow-500/30 w-fit">
+                                                    Nuclei Recon
                                                 </span>
                                             ) : (
                                                 <span className="text-[10px] px-1.5 py-0.5 rounded border uppercase font-bold bg-purple-500/20 text-purple-400 border-purple-500/30 w-fit">
