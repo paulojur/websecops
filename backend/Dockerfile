@@ -26,7 +26,8 @@ RUN apt-get update \
 RUN wget https://github.com/projectdiscovery/nuclei/releases/download/v3.3.0/nuclei_3.3.0_linux_amd64.zip \
     && unzip nuclei_3.3.0_linux_amd64.zip \
     && mv nuclei /usr/local/bin/ \
-    && rm nuclei_3.3.0_linux_amd64.zip
+    && rm nuclei_3.3.0_linux_amd64.zip \
+    && nuclei -update-templates
 
 RUN pip install --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r requirements.txt

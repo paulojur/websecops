@@ -32,8 +32,7 @@ class NucleiScanner:
         command = [
             "nuclei",
             "-u", target_url,
-            "-jsonl",
-            "-silent"
+            "-jsonl"
         ]
 
         try:
@@ -60,12 +59,13 @@ class NucleiScanner:
                         pass
             
             process.wait()
+            
+            stderr_output = process.stderr.read() if process.stderr else ""
+            if stderr_output:
+                print(f"Nuclei stderr for {target_url}: {stderr_output}")
 
             if process.returncode != 0:
-                # If nuclei failed completely (not just found things)
-                # Note: nuclei returns 0 usually, but just in case
-                stderr_output = process.stderr.read() if process.stderr else ""
-                print(f"Nuclei stderr: {stderr_output}")
+                print(f"Nuclei exited with code {process.returncode}")
 
             self._scans[scan_id]["status"] = "completed"
             self._scans[scan_id]["progress"] = 100
