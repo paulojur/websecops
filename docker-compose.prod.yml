@@ -54,8 +54,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    mem_limit: 640m
-    cpus: "0.70"
+    mem_limit: 1500m
+    cpus: "1.00"
 
   frontend:
     build:
