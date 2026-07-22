@@ -92,7 +92,6 @@ export default function ScansPage() {
         setAppModeState(mode);
         const savedKey = localStorage.getItem('admin_api_key');
         setIsAdmin(!!savedKey);
-        if (savedKey) setMasterKeyInput(savedKey);
         loadHistory(mode);
     }, []);
 

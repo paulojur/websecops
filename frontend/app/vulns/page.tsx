@@ -51,14 +51,14 @@ export default function VulnsPage() {
                 <Search className="w-5 h-5 text-gray-500" />
                 <input
                     type="text"
-                    placeholder="Buscar por ID (CVE-2024...), Produto ou Palavra-chave..."
+                    placeholder={t('searchPlaceholder')}
                     className="flex-1 bg-transparent text-white focus:outline-none"
                 />
             </div>
 
             <div className="space-y-4">
                 {loading ? (
-                    <div className="text-center py-20 text-gray-500 animate-pulse">Carregando CVEs...</div>
+                    <div className="text-center py-20 text-gray-500 animate-pulse">{t('loadingVulns')}</div>
                 ) : (
                     vulns.map((v: any) => (
                         <div key={v.id} className="bg-white/5 border border-white/10 p-6 rounded-lg hover:bg-white/10 transition-colors">

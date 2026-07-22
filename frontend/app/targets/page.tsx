@@ -23,7 +23,6 @@ export default function TargetsPage() {
         setAppModeState(mode);
         const key = localStorage.getItem('admin_api_key');
         setIsAdmin(!!key);
-        if (key) setMasterKeyInput(key);
         loadTargets(mode);
     }, []);
 

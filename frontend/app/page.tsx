@@ -246,7 +246,7 @@ export default function Home() {
             <LayoutDashboard className="w-8 h-8 text-cyber-primary" />
             {t('dashboard')}
           </h1>
-          <p className="text-gray-400 text-sm mt-1 uppercase tracking-widest pl-12">Monitoramento em Tempo Real</p>
+          <p className="text-gray-400 text-sm mt-1 uppercase tracking-widest pl-12">{t('realtimeMonitoring')}</p>
         </div>
         <div className="flex items-center gap-4 text-xs font-mono">
           <div className="flex items-center gap-2 bg-cyber-panel border border-white/10 rounded px-2 py-1">
@@ -289,19 +289,19 @@ export default function Home() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
         <div className="glass-panel p-4 rounded-lg border border-white/10">
-          <p className="text-[10px] uppercase tracking-widest text-gray-400">Modo atual</p>
-          <h2 className="text-lg font-bold text-white mt-1">{appMode === 'demo' ? 'Demo local' : 'Live com backend'}</h2>
-          <p className="text-sm text-gray-400 mt-2">{appMode === 'demo' ? 'Os dados são escaneados em tempo real no backend, mas salvos apenas no seu navegador.' : 'Os alvos e correlações vêm diretamente da base inteligente.'}</p>
+          <p className="text-[10px] uppercase tracking-widest text-gray-400">{t('currentModeLabel')}</p>
+          <h2 className="text-lg font-bold text-white mt-1">{appMode === 'demo' ? t('demoModeCardTitle') : t('liveModeCardTitle')}</h2>
+          <p className="text-sm text-gray-400 mt-2">{appMode === 'demo' ? t('demoModeCardDesc') : t('liveModeCardDesc')}</p>
         </div>
         <div className="glass-panel p-4 rounded-lg border border-white/10">
-          <p className="text-[10px] uppercase tracking-widest text-gray-400">Em 2 minutos</p>
-          <h2 className="text-lg font-bold text-white mt-1">Cadastre, detecte, priorize</h2>
-          <p className="text-sm text-gray-400 mt-2">1. Adicione um alvo. 2. Veja a tecnologia detectada. 3. Abra a correlação com motivo e confiança.</p>
+          <p className="text-[10px] uppercase tracking-widest text-gray-400">{t('twoMinTitle')}</p>
+          <h2 className="text-lg font-bold text-white mt-1">{t('twoMinHeading')}</h2>
+          <p className="text-sm text-gray-400 mt-2">{t('twoMinDesc')}</p>
         </div>
         <div className="glass-panel p-4 rounded-lg border border-white/10">
-          <p className="text-[10px] uppercase tracking-widest text-gray-400">Scan sob demanda</p>
-          <h2 className="text-lg font-bold text-white mt-1">ZAP apenas quando precisar</h2>
-          <p className="text-sm text-gray-400 mt-2">O profile de scan fica desligado por padrão para manter o stack viável em máquinas pequenas.</p>
+          <p className="text-[10px] uppercase tracking-widest text-gray-400">{t('onDemandScanTitle')}</p>
+          <h2 className="text-lg font-bold text-white mt-1">{t('onDemandScanHeading')}</h2>
+          <p className="text-sm text-gray-400 mt-2">{t('onDemandScanDesc')}</p>
         </div>
       </div>
 

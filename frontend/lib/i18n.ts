@@ -42,22 +42,20 @@ export const translations = {
     confirm: 'Confirmar',
     cancel: 'Cancelar',
     areYouSure: 'Tem certeza de que deseja deletar este alvo?',
-
-    // Targets page
-    myTargetsTitle: 'Meus Alvos',
-    myTargetsDescription: 'Gerencie seus alvos de segurança',
-    addNewTarget: 'Adicionar Novo Alvo',
-    targetUrl: 'URL do Alvo',
-    status: 'Status',
-    active: 'Ativo',
-    inactive: 'Inativo',
-    lastScanned: 'Último Scan',
-    actions: 'Ações',
-    scan: 'Scan',
-    remove: 'Remover',
+    realtimeMonitoring: 'Monitoramento em Tempo Real',
+    liveModeCardTitle: 'Live com backend',
+    demoModeCardTitle: 'Demo local',
+    liveModeCardDesc: 'Os alvos e correlações vêm diretamente da base inteligente.',
+    demoModeCardDesc: 'Os dados são escaneados em tempo real no backend, mas salvos apenas no seu navegador.',
+    onDemandScanTitle: 'Scan sob demanda',
+    onDemandScanHeading: 'ZAP apenas quando precisar',
+    onDemandScanDesc: 'O profile de scan fica desligado por padrão para manter o stack viável em máquinas pequenas.',
+    twoMinTitle: 'Em 2 minutos',
+    twoMinHeading: 'Cadastre, detecte, priorize',
+    twoMinDesc: '1. Adicione um alvo. 2. Veja a tecnologia detectada. 3. Abra a correlação com motivo e confiança.',
 
     // Scans page & Origin Filters
-    scanCenter: 'Centro de Scan Avançado',
+    scanCenterTitle: 'Centro de Scan Avançado',
     scanCenterSubtitle: 'Análise profunda de vulnerabilidades (DAST & Recon)',
     runScan: 'Executar Scan',
     scanHistory: 'Histórico de Scans Salvos',
@@ -90,6 +88,13 @@ export const translations = {
     copyTicket: 'Copiar Ticket (Jira/Markdown)',
     occurrences: 'ocorrência',
     occurrencesPlural: 'ocorrências',
+    scanModeLabel: 'Modo de Scan',
+    masterKeyConfigured: 'Master Key Ativa',
+    enterMasterKeyBtn: 'Informar Master Key',
+    noSavedScansText: 'Nenhum scan salvo no histórico local.',
+    originLabel: 'Origem:',
+    copiedText: 'Copiado!',
+    recommendationLabel: 'Recomendação:',
 
     // Master Key Modal & Tooltips
     masterKeyRequiredTitle: 'Master API Key Necessária',
@@ -109,6 +114,7 @@ export const translations = {
     addTargetButton: 'ADICIONAR',
     targetAddedSuccess: 'Alvo escaneado e adicionado com sucesso!',
     targetAddError: 'Falha ao adicionar alvo. Verifique se a Master Key está salva para o modo LIVE.',
+    currentModeLabel: 'Modo Atual:',
 
     // Vulnerabilities page
     vulnerabilitiesTitle: 'Vulnerabilidades',
@@ -120,6 +126,8 @@ export const translations = {
     remediation: 'Remediação',
     export: 'Exportar',
     exportPDF: 'Exportar para PDF',
+    searchPlaceholder: 'Buscar por ID (CVE-2024...), Produto ou Palavra-chave...',
+    loadingVulns: 'Carregando CVEs...',
 
     // Intelligence page
     intelligenceTitle: 'Inteligência de Ameaças',
@@ -127,6 +135,10 @@ export const translations = {
     source: 'Fonte',
     date: 'Data',
     readMore: 'Leia Mais',
+    forceUpdate: 'Forçar Atualização',
+    noDescription: 'Sem descrição disponível.',
+    readFullArticle: 'Ler matéria completa',
+    loadingIntelligence: 'Carregando feed de inteligência...',
   },
   en: {
     // Sidebar

@@ -6,7 +6,8 @@ import { ShieldAlert, ArrowLeft, Loader2, AlertTriangle, ExternalLink, Clipboard
 import { getTargetCorrelations, getTargetHistory } from '@/lib/api';
 import { exportTargetCorrelationsCSV, exportTargetCorrelationsPDF } from '@/lib/export';
 import Link from 'next/link';
-import { getAppMode, getDemoTarget } from '@/lib/demo-targets';
+import { getAppMode, getDemoTarget, getDemoScanHistory } from '@/lib/demo-targets';
+import { useLanguage } from '@/lib/useLanguage';
 
 type TechnologyInfo = {
     version?: string;
