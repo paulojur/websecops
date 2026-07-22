@@ -182,6 +182,18 @@ export const translations = {
     cancel: 'Cancel',
     areYouSure: 'Are you sure you want to delete this target?',
 
+    realtimeMonitoring: 'Real-time Security Monitoring',
+    liveModeCardTitle: 'Live Backend',
+    demoModeCardTitle: 'Local Demo',
+    liveModeCardDesc: 'Targets and correlations come directly from the security intelligence database.',
+    demoModeCardDesc: 'Data is scanned in real-time on the backend but saved only in your browser.',
+    onDemandScanTitle: 'On-demand Scan',
+    onDemandScanHeading: 'ZAP only when needed',
+    onDemandScanDesc: 'The scan profile remains off by default to keep resource usage optimal.',
+    twoMinTitle: 'In 2 minutes',
+    twoMinHeading: 'Register, detect, prioritize',
+    twoMinDesc: '1. Add a target. 2. View detected technology. 3. Open correlation with reason and confidence.',
+
     // Scans page & Origin Filters
     scanCenterTitle: 'Advanced Scan Center',
     scanCenterSubtitle: 'Deep vulnerability analysis (DAST & Recon)',
@@ -216,6 +228,13 @@ export const translations = {
     copyTicket: 'Copy Ticket (Jira/Markdown)',
     occurrences: 'occurrence',
     occurrencesPlural: 'occurrences',
+    scanModeLabel: 'Scan Mode',
+    masterKeyConfigured: 'Master Key Active',
+    enterMasterKeyBtn: 'Configure Master Key',
+    noSavedScansText: 'No saved scans in local history.',
+    originLabel: 'Origin:',
+    copiedText: 'Copied!',
+    recommendationLabel: 'Recommendation:',
 
     // Master Key Modal & Tooltips
     masterKeyRequiredTitle: 'Master API Key Required',
@@ -235,6 +254,7 @@ export const translations = {
     addTargetButton: 'ADD TARGET',
     targetAddedSuccess: 'Target scanned and added successfully!',
     targetAddError: 'Failed to add target. Ensure Master Key is set for LIVE mode.',
+    currentModeLabel: 'Current Mode:',
 
     // Vulnerabilities page
     vulnerabilitiesTitle: 'Vulnerabilities',
@@ -246,6 +266,8 @@ export const translations = {
     remediation: 'Remediation',
     export: 'Export',
     exportPDF: 'Export to PDF',
+    searchPlaceholder: 'Search by ID (CVE-2024...), Product or Keyword...',
+    loadingVulns: 'Loading CVE database...',
 
     // Intelligence page
     intelligenceTitle: 'Threat Intelligence',
@@ -253,6 +275,10 @@ export const translations = {
     source: 'Source',
     date: 'Date',
     readMore: 'Read More',
+    forceUpdate: 'Force Update',
+    noDescription: 'No description available.',
+    readFullArticle: 'Read Full Article',
+    loadingIntelligence: 'Loading threat intelligence feed...',
   },
 };
 
