@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Sidebar from "./components/Sidebar";
 import "./globals.css";
+import { LanguageProvider } from "@/lib/LanguageContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,15 +27,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-cyber-dark text-white flex h-screen overflow-hidden`}
       >
-        <Sidebar />
-        <main className="flex-1 relative overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-cyber-primary/10 scrollbar-track-transparent">
-          {children}
-        </main>
-        <AdminLogin />
+        <LanguageProvider>
+          <Sidebar />
+          <main className="flex-1 relative overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-cyber-primary/10 scrollbar-track-transparent">
+            {children}
+          </main>
+          <AdminLogin />
+        </LanguageProvider>
       </body>
     </html>
   );

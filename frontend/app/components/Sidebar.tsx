@@ -2,18 +2,20 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Target, ShieldAlert, Newspaper, Settings, Zap } from 'lucide-react';
-
-const menuItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
-    { name: 'Meus Alvos', icon: Target, path: '/targets' },
-    { name: 'Centro de Scan', icon: Zap, path: '/scans' },
-    { name: 'Vulnerabilidades', icon: ShieldAlert, path: '/vulns' },
-    { name: 'Inteligência', icon: Newspaper, path: '/intelligence' },
-];
+import { LayoutDashboard, Target, ShieldAlert, Newspaper, Settings, Zap, Globe } from 'lucide-react';
+import { useLanguage } from '@/lib/useLanguage';
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const { language, setLanguage, t } = useLanguage();
+
+    const menuItems = [
+        { name: t('dashboard'), icon: LayoutDashboard, path: '/', key: 'dashboard' },
+        { name: t('myTargets'), icon: Target, path: '/targets', key: 'myTargets' },
+        { name: t('scanCenter'), icon: Zap, path: '/scans', key: 'scanCenter' },
+        { name: t('vulnerabilities'), icon: ShieldAlert, path: '/vulns', key: 'vulnerabilities' },
+        { name: t('intelligence'), icon: Newspaper, path: '/intelligence', key: 'intelligence' },
+    ];
 
     return (
         <aside className="w-64 h-screen bg-cyber-panel border-r border-white/5 flex flex-col shrink-0 z-50">
@@ -49,6 +51,34 @@ export default function Sidebar() {
                 })}
             </nav>
 
+            {/* Language Selector */}
+            <div className="p-4 border-t border-white/5 mx-4 mb-4">
+                <div className="flex items-center gap-2 p-3 rounded bg-black/20 border border-white/5">
+                    <Globe className="w-4 h-4 text-cyber-primary" />
+                    <span className="text-xs font-semibold text-gray-300 mr-auto">{t('language')}</span>
+                    <div className="flex gap-1">
+                        <button
+                            onClick={() => setLanguage('pt')}
+                            className={`px-2 py-1 rounded text-xs font-semibold transition-all ${language === 'pt'
+                                ? 'bg-cyber-primary text-black'
+                                : 'bg-white/10 text-gray-400 hover:text-white'
+                                }`}
+                        >
+                            PT
+                        </button>
+                        <button
+                            onClick={() => setLanguage('en')}
+                            className={`px-2 py-1 rounded text-xs font-semibold transition-all ${language === 'en'
+                                ? 'bg-cyber-primary text-black'
+                                : 'bg-white/10 text-gray-400 hover:text-white'
+                                }`}
+                        >
+                            EN
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Footer / User */}
             <div className="p-4 border-t border-white/5 mx-4 mb-4">
                 <div className="flex items-center gap-3 p-3 rounded bg-black/20 border border-white/5">
@@ -56,8 +86,8 @@ export default function Sidebar() {
                         QA
                     </div>
                     <div className="overflow-hidden">
-                        <p className="text-xs font-bold text-white truncate">QA Engineer</p>
-                        <p className="text-[10px] text-gray-400 truncate">Security Dept.</p>
+                        <p className="text-xs font-bold text-white truncate">{t('qaEngineer')}</p>
+                        <p className="text-[10px] text-gray-400 truncate">{t('securityDept')}</p>
                     </div>
                     <Settings className="w-4 h-4 text-gray-500 ml-auto cursor-pointer hover:text-white" />
                 </div>

@@ -6,8 +6,10 @@ import { ShieldAlert, Terminal, Activity, Globe, Zap, Cpu, X, Trash, RefreshCw, 
 import { motion } from 'framer-motion';
 import SeverityChart from './components/SeverityChart';
 import { AppMode, deleteDemoTarget, getAppMode, getDemoTargets, setAppMode, saveDemoTarget } from '@/lib/demo-targets';
+import { useLanguage } from '@/lib/useLanguage';
 
 export default function Home() {
+  const { t: translate } = useLanguage();
   const [vulns, setVulns] = useState([]);
   const [intel, setIntel] = useState([]);
   const [stats, setStats] = useState({ total_tracked: 0, critical_count: 0, high_count: 0 });
@@ -110,7 +112,7 @@ export default function Home() {
   }
 
   const handleDeleteTarget = async (id: number) => {
-    if (!confirm('Are you sure you want to remove this target?')) return;
+    if (!confirm(translate('areYouSure'))) return;
 
     try {
       if (appMode === 'demo') {
@@ -118,8 +120,8 @@ export default function Home() {
       } else {
         await deleteTarget(id);
       }
-      const t = appMode === 'demo' ? getDemoTargets() : await getTargets();
-      setTargets(t);
+      const targetsList = appMode === 'demo' ? getDemoTargets() : await getTargets();
+      setTargets(targetsList);
     } catch (e) {
       console.error("Failed to delete target", e);
       alert('Failed to delete target');
@@ -175,7 +177,7 @@ export default function Home() {
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   <ShieldAlert className="w-6 h-6 text-red-500" />
-                  Security Risks Analysis
+                  {t('targetCorrelations')}
                 </h2>
                 <p className="text-sm text-gray-400 font-mono mt-1">{selectedTarget.url}</p>
               </div>
@@ -200,12 +202,12 @@ export default function Home() {
 
             <div className="p-6 overflow-y-auto flex-1 scrollbar-thin">
               {loadingCorrelations ? (
-                <div className="flex justify-center p-8 text-cyber-primary animate-pulse">Analyzing Risk Vectors...</div>
+                <div className="flex justify-center p-8 text-cyber-primary animate-pulse">{translate('loadingData')}</div>
               ) : (
                 <div className="space-y-4">
                   {filteredCorrelations.length === 0 ? (
                     <p className="text-gray-500 text-center">
-                      {riskFilter ? 'No vulnerabilities match your filter.' : 'No specific public exploits linked to detected version (Generic alert).'}
+                      {riskFilter ? translate('noCVEFound') : 'No specific public exploits linked to detected version (Generic alert).'}
                     </p>
                   ) : (
                     filteredCorrelations.map((c: any, i) => (
@@ -242,7 +244,7 @@ export default function Home() {
         <div>
           <h1 className="text-3xl font-bold tracking-tighter flex items-center gap-3 text-white">
             <LayoutDashboard className="w-8 h-8 text-cyber-primary" />
-            Visão Geral
+            {translate('dashboard')}
           </h1>
           <p className="text-gray-400 text-sm mt-1 uppercase tracking-widest pl-12">Monitoramento em Tempo Real</p>
         </div>
@@ -267,7 +269,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
-            <span>MONITORING ACTIVE</span>
+            <span>{t('loadingData').toUpperCase()}</span>
           </div>
           <div className="bg-cyber-panel border border-white/10 px-4 py-2 rounded">
             v2.1.0-DEV
@@ -279,7 +281,7 @@ export default function Home() {
                 className="flex items-center gap-2 bg-cyber-panel border border-white/10 px-4 py-2 rounded hover:bg-white/5 transition-colors text-xs font-mono uppercase tracking-wider hover:text-cyber-primary"
               >
                 <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'UPDATING...' : 'SYNC DB'}
+                {isSyncing ? 'UPDATING...' : translate('syncVulnerabilities').toUpperCase()}
               </button>
           )}
         </div>
@@ -305,9 +307,9 @@ export default function Home() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-        <StatCard title="TOTAL VULNERABILITIES" value={stats.total_tracked} icon={Globe} color="text-blue-400" />
-        <StatCard title="CRITICAL THREATS" value={stats.critical_count} icon={Zap} color="text-red-500" isAlert />
-        <StatCard title="HIGH SEVERITY" value={stats.high_count} icon={ShieldAlert} color="text-orange-400" />
+        <StatCard title={translate('trackedAssets')} value={stats.total_tracked} icon={Globe} color="text-blue-400" />
+        <StatCard title={translate('criticalVulnerabilities')} value={stats.critical_count} icon={Zap} color="text-red-500" isAlert />
+        <StatCard title={translate('high')} value={stats.high_count} icon={ShieldAlert} color="text-orange-400" />
 
         <div className="glass-panel p-4 rounded-lg flex flex-col items-center justify-center relative min-h-[160px]">
           <h3 className="text-xs text-gray-400 uppercase tracking-widest absolute top-4 left-4">THREAT DISTRIBUTION</h3>
@@ -320,7 +322,7 @@ export default function Home() {
         <div className="lg:col-span-2 space-y-8">
           <div className="glass-panel p-6 rounded-lg overflow-hidden flex flex-col h-[500px]">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-cyber-secondary">
-              <Cpu className="w-5 h-5" /> WEB VULNERABILITIES DETECTED
+              <Cpu className="w-5 h-5" /> {translate('recentVulnerabilities').toUpperCase()}
             </h2>
             <div className="overflow-y-auto pr-2 space-y-3 flex-1 scrollbar-thin">
               {vulns.map((v: any, i) => (
@@ -370,15 +372,15 @@ export default function Home() {
                   disabled={loadingTarget}
                   className="bg-cyber-primary text-black px-3 py-1 rounded text-sm font-bold hover:bg-white transition-colors disabled:opacity-50"
                 >
-                  {loadingTarget ? 'SCANNING...' : 'SCAN'}
+                  {loadingTarget ? translate('loadingData') : translate('addButton')}
                 </button>
               </form>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto pr-2">
-              {targets.map((t: any) => (
-                <div key={t.id} className={`p-4 bg-white/5 border ${t.potential_vulns > 0 ? 'border-red-500/50' : 'border-white/5'} rounded hover:border-cyber-primary/50 transition-colors relative`}>
-                  <h3 className="font-mono text-sm font-bold text-cyber-primary truncate" title={t.url}>{t.url}</h3>
+              {targets.map((target: any) => (
+                <div key={target.id} className={`p-4 bg-white/5 border ${target.potential_vulns > 0 ? 'border-red-500/50' : 'border-white/5'} rounded hover:border-cyber-primary/50 transition-colors relative`}>
+                  <h3 className="font-mono text-sm font-bold text-cyber-primary truncate" title={target.url}>{target.url}</h3>
 
                   {appMode === 'demo' && (
                     <div className="absolute top-2 left-2 text-[10px] uppercase tracking-widest bg-cyber-secondary/15 text-cyber-secondary border border-cyber-secondary/20 px-2 py-0.5 rounded">
@@ -387,18 +389,18 @@ export default function Home() {
                   )}
 
                   {/* Risk Badge */}
-                  {t.potential_vulns > 0 && (
+                  {target.potential_vulns > 0 && (
                     <div
-                      onClick={() => handleOpenCorrelations(t)}
+                      onClick={() => handleOpenCorrelations(target)}
                       className="absolute top-2 right-2 flex items-center gap-1 bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-500/30 animate-pulse cursor-pointer hover:bg-red-500/30 transition-colors"
                     >
                       <ShieldAlert className="w-3 h-3" />
-                      {t.potential_vulns} POTENTIAL VULNS
+                      {target.potential_vulns} POTENTIAL VULNS
                     </div>
                   )}
 
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {Object.entries(t.technologies || {}).map(([k, v]: any) => {
+                    {Object.entries(target.technologies || {}).map(([k, v]: any) => {
                       const detail = typeof v === 'object' && v !== null
                         ? [v.version, v.category].filter(Boolean).join(' · ')
                         : String(v ?? '');
@@ -410,14 +412,14 @@ export default function Home() {
                         </span>
                       );
                     })}
-                    {Object.keys(t.technologies || {}).length === 0 && (
-                      <span className="text-xs text-gray-500 italic">No technologies detected</span>
+                    {Object.keys(target.technologies || {}).length === 0 && (
+                      <span className="text-xs text-gray-500 italic">{translate('noTargets')}</span>
                     )}
                   </div>
                   <div className="mt-2 text-[10px] text-gray-500 flex justify-between items-end">
-                    <span>Last Scan: {t.last_scan ? new Date(t.last_scan).toLocaleString() : 'Never'}</span>
+                    <span>{translate('lastScanned')}: {target.last_scan ? new Date(target.last_scan).toLocaleString() : 'Never'}</span>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteTarget(t.id); }}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteTarget(target.id); }}
                       className="text-gray-500 hover:text-red-500 transition-colors"
                       title="Remove Target"
                     >
@@ -436,7 +438,7 @@ export default function Home() {
             <Terminal className="w-24 h-24" />
           </div>
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-cyber-accent">
-            <Activity className="w-5 h-5" /> INTELLIGENCE STREAM
+            <Activity className="w-5 h-5" /> {translate('threatIntelligence').toUpperCase()}
           </h2>
           <div className="overflow-y-auto pr-2 space-y-4 flex-1">
             {intel.map((item: any, i) => (

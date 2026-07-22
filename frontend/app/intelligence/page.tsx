@@ -4,7 +4,10 @@ import { Activity, ExternalLink, Filter } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getIntelligence } from '@/lib/api';
 
+import { useLanguage } from '@/lib/useLanguage';
+
 export default function IntelligencePage() {
+    const { t } = useLanguage();
     const [intel, setIntel] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -28,9 +31,9 @@ export default function IntelligencePage() {
                 <div>
                     <h1 className="text-3xl font-bold flex items-center gap-3 text-white">
                         <Activity className="w-8 h-8 text-cyber-accent" />
-                        Inteligência de Ameaças
+                        {t('intelligenceTitle')}
                     </h1>
-                    <p className="text-gray-400 mt-2">Feed em tempo real de vulnerabilidades globais e notícias de segurança</p>
+                    <p className="text-gray-400 mt-2">{t('intelligenceDescription')}</p>
                 </div>
                 <button
                     onClick={async () => {

@@ -4,7 +4,10 @@ import { Shield, Search, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getVulnerabilities } from '@/lib/api';
 
+import { useLanguage } from '@/lib/useLanguage';
+
 export default function VulnsPage() {
+    const { t } = useLanguage();
     const [vulns, setVulns] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -37,9 +40,9 @@ export default function VulnsPage() {
                 <div>
                     <h1 className="text-3xl font-bold flex items-center gap-3 text-white">
                         <Shield className="w-8 h-8 text-red-500" />
-                        Base de Vulnerabilidades (CVEs)
+                        {t('vulnerabilitiesTitle')}
                     </h1>
-                    <p className="text-gray-400 mt-2">Banco de dados sincronizado com NVD (National Vulnerability Database)</p>
+                    <p className="text-gray-400 mt-2">{t('vulnerabilitiesDescription')}</p>
                 </div>
             </header>
 

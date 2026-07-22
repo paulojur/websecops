@@ -56,3 +56,26 @@ export function getDemoTarget(id: number): any {
     const targets = getDemoTargets();
     return targets.find((t: any) => t.id === id) || null;
 }
+
+const DEMO_SCAN_HISTORY_KEY = 'websecops_demo_scan_history';
+
+export function getDemoScanHistory(): any[] {
+    if (typeof window === 'undefined') return [];
+    try {
+        const data = localStorage.getItem(DEMO_SCAN_HISTORY_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch {
+        return [];
+    }
+}
+
+export function saveDemoScanHistory(scanData: any) {
+    if (typeof window === 'undefined') return;
+    const history = getDemoScanHistory();
+    history.unshift({
+        id: Date.now().toString(),
+        created_at: new Date().toISOString(),
+        ...scanData
+    });
+    localStorage.setItem(DEMO_SCAN_HISTORY_KEY, JSON.stringify(history.slice(0, 30)));
+}

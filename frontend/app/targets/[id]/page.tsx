@@ -83,6 +83,7 @@ type TargetDetailsData = {
 };
 
 export default function TargetDetailsPage() {
+    const { t } = useLanguage();
     const params = useParams();
     const router = useRouter();
     const id = params?.id as string;
@@ -105,7 +106,7 @@ export default function TargetDetailsPage() {
                 if (mode === 'demo') {
                     const demoTarget = getDemoTarget(parseInt(id));
                     if (!demoTarget) {
-                        throw new Error('Alvo local nao encontrado no modo demo.');
+                        throw new Error('Alvo local não encontrado no modo demo.');
                     }
 
                     setData({
@@ -118,6 +119,11 @@ export default function TargetDetailsPage() {
                         hardening: demoTarget.hardening,
                         summary: demoTarget.summary,
                     });
+
+                    // Load demo scan history for this target URL
+                    const allDemoHistory = getDemoScanHistory();
+                    const filtered = allDemoHistory.filter((h: any) => h.target_url === demoTarget.url);
+                    setHistory(filtered);
                     return;
                 }
 
@@ -220,7 +226,7 @@ export default function TargetDetailsPage() {
             </div>
 
             {/* Histórico de Scans */}
-            {appMode === 'live' && history.length > 0 && (
+            {history.length > 0 && (
                 <div className="bg-black/40 border border-white/10 p-6 rounded-lg">
                     <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                         <ClipboardList className="w-5 h-5 text-cyber-secondary" />
