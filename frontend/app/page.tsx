@@ -9,7 +9,7 @@ import { AppMode, deleteDemoTarget, getAppMode, getDemoTargets, setAppMode, save
 import { useLanguage } from '@/lib/useLanguage';
 
 export default function Home() {
-  const { t: translate } = useLanguage();
+  const { t } = useLanguage();
   const [vulns, setVulns] = useState([]);
   const [intel, setIntel] = useState([]);
   const [stats, setStats] = useState({ total_tracked: 0, critical_count: 0, high_count: 0 });
@@ -202,12 +202,12 @@ export default function Home() {
 
             <div className="p-6 overflow-y-auto flex-1 scrollbar-thin">
               {loadingCorrelations ? (
-                <div className="flex justify-center p-8 text-cyber-primary animate-pulse">{translate('loadingData')}</div>
+                <div className="flex justify-center p-8 text-cyber-primary animate-pulse">{t('loadingData')}</div>
               ) : (
                 <div className="space-y-4">
                   {filteredCorrelations.length === 0 ? (
                     <p className="text-gray-500 text-center">
-                      {riskFilter ? translate('noCVEFound') : 'No specific public exploits linked to detected version (Generic alert).'}
+                      {riskFilter ? t('noCVEFound') : 'No specific public exploits linked to detected version (Generic alert).'}
                     </p>
                   ) : (
                     filteredCorrelations.map((c: any, i) => (
@@ -244,7 +244,7 @@ export default function Home() {
         <div>
           <h1 className="text-3xl font-bold tracking-tighter flex items-center gap-3 text-white">
             <LayoutDashboard className="w-8 h-8 text-cyber-primary" />
-            {translate('dashboard')}
+            {t('dashboard')}
           </h1>
           <p className="text-gray-400 text-sm mt-1 uppercase tracking-widest pl-12">Monitoramento em Tempo Real</p>
         </div>
@@ -281,7 +281,7 @@ export default function Home() {
                 className="flex items-center gap-2 bg-cyber-panel border border-white/10 px-4 py-2 rounded hover:bg-white/5 transition-colors text-xs font-mono uppercase tracking-wider hover:text-cyber-primary"
               >
                 <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'UPDATING...' : translate('syncVulnerabilities').toUpperCase()}
+                {isSyncing ? 'UPDATING...' : t('syncVulnerabilities').toUpperCase()}
               </button>
           )}
         </div>
@@ -307,9 +307,9 @@ export default function Home() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-        <StatCard title={translate('trackedAssets')} value={stats.total_tracked} icon={Globe} color="text-blue-400" />
-        <StatCard title={translate('criticalVulnerabilities')} value={stats.critical_count} icon={Zap} color="text-red-500" isAlert />
-        <StatCard title={translate('high')} value={stats.high_count} icon={ShieldAlert} color="text-orange-400" />
+        <StatCard title={t('trackedAssets')} value={stats.total_tracked} icon={Globe} color="text-blue-400" />
+        <StatCard title={t('criticalVulnerabilities')} value={stats.critical_count} icon={Zap} color="text-red-500" isAlert />
+        <StatCard title={t('high')} value={stats.high_count} icon={ShieldAlert} color="text-orange-400" />
 
         <div className="glass-panel p-4 rounded-lg flex flex-col items-center justify-center relative min-h-[160px]">
           <h3 className="text-xs text-gray-400 uppercase tracking-widest absolute top-4 left-4">THREAT DISTRIBUTION</h3>
@@ -322,7 +322,7 @@ export default function Home() {
         <div className="lg:col-span-2 space-y-8">
           <div className="glass-panel p-6 rounded-lg overflow-hidden flex flex-col h-[500px]">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-cyber-secondary">
-              <Cpu className="w-5 h-5" /> {translate('recentVulnerabilities').toUpperCase()}
+              <Cpu className="w-5 h-5" /> {t('recentVulnerabilities').toUpperCase()}
             </h2>
             <div className="overflow-y-auto pr-2 space-y-3 flex-1 scrollbar-thin">
               {vulns.map((v: any, i) => (
@@ -372,7 +372,7 @@ export default function Home() {
                   disabled={loadingTarget}
                   className="bg-cyber-primary text-black px-3 py-1 rounded text-sm font-bold hover:bg-white transition-colors disabled:opacity-50"
                 >
-                  {loadingTarget ? translate('loadingData') : translate('addButton')}
+                  {loadingTarget ? t('loadingData') : t('addButton')}
                 </button>
               </form>
             </div>
@@ -413,11 +413,11 @@ export default function Home() {
                       );
                     })}
                     {Object.keys(target.technologies || {}).length === 0 && (
-                      <span className="text-xs text-gray-500 italic">{translate('noTargets')}</span>
+                      <span className="text-xs text-gray-500 italic">{t('noTargets')}</span>
                     )}
                   </div>
                   <div className="mt-2 text-[10px] text-gray-500 flex justify-between items-end">
-                    <span>{translate('lastScanned')}: {target.last_scan ? new Date(target.last_scan).toLocaleString() : 'Never'}</span>
+                    <span>{t('lastScanned')}: {target.last_scan ? new Date(target.last_scan).toLocaleString() : 'Never'}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteTarget(target.id); }}
                       className="text-gray-500 hover:text-red-500 transition-colors"
@@ -438,7 +438,7 @@ export default function Home() {
             <Terminal className="w-24 h-24" />
           </div>
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-cyber-accent">
-            <Activity className="w-5 h-5" /> {translate('threatIntelligence').toUpperCase()}
+            <Activity className="w-5 h-5" /> {t('threatIntelligence').toUpperCase()}
           </h2>
           <div className="overflow-y-auto pr-2 space-y-4 flex-1">
             {intel.map((item: any, i) => (
