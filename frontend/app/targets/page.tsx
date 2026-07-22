@@ -151,7 +151,7 @@ export default function TargetsPage() {
                         className={`text-xs px-3 py-1.5 rounded border transition-colors flex items-center gap-1 ${isAdmin ? 'border-cyber-primary text-cyber-primary bg-cyber-primary/10' : 'border-white/10 text-gray-400 hover:text-white'}`}
                     >
                         <Key className="w-3.5 h-3.5" />
-                        {isAdmin ? 'Master Key Configurada' : 'Configurar Master Key'}
+                        {isAdmin ? 'Admin Authenticated' : 'Authenticate Admin'}
                     </button>
                 )}
             </div>

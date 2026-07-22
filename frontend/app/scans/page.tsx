@@ -334,10 +334,10 @@ export default function ScansPage() {
         try {
             addLog('Buscando resultados...');
             let data;
-            
+
             const currentType = type || scanStatus?.type;
             const currentId = id || scanStatus?.id;
-            
+
             if (currentType === 'nuclei' && currentId) {
                 const raw = await getNucleiResults(currentId);
                 const transformedAlerts = (raw.alerts || []).map((alert: any) => ({
@@ -459,7 +459,7 @@ export default function ScansPage() {
                         className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-xs font-bold transition-colors ${isAdmin ? 'bg-cyber-primary/20 border-cyber-primary text-cyber-primary' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}
                     >
                         <Key className="w-4 h-4" />
-                        {isAdmin ? 'Master Key Salva' : 'Informar Master Key'}
+                        {isAdmin ? 'Admin Authenticated' : 'Authenticate Admin'}
                     </button>
                 </div>
             </header>
@@ -478,7 +478,7 @@ export default function ScansPage() {
                                 <input
                                     type="url"
                                     required
-                                    placeholder="https://exemplo.com.br"
+                                    placeholder="https://demo.testfire.net/"
                                     className="w-full bg-black/30 border border-white/10 rounded p-3 text-white focus:border-cyber-primary outline-none"
                                     value={targetUrl}
                                     onChange={e => setTargetUrl(e.target.value)}

@@ -90,7 +90,7 @@ export const translations = {
     occurrencesPlural: 'ocorrências',
     scanModeLabel: 'Modo de Scan',
     masterKeyConfigured: 'Master Key Ativa',
-    enterMasterKeyBtn: 'Informar Master Key',
+    enterMasterKeyBtn: 'Authenticate Admin',
     noSavedScansText: 'Nenhum scan salvo no histórico local.',
     originLabel: 'Origem:',
     copiedText: 'Copiado!',
@@ -110,7 +110,8 @@ export const translations = {
     liveModeDesc: 'Os alvos são salvos no backend Postgres e consultados pela API.',
     demoModeDesc: 'Os alvos são analisados em tempo real e salvos localmente no seu navegador.',
     activeTargets: 'ALVOS ATIVOS',
-    targetUrlPlaceholder: 'https://exemplo.com.br',
+    targetUrl: 'URL do Alvo',
+    targetUrlPlaceholder: 'https://demo.testfire.net/',
     addTargetButton: 'ADICIONAR',
     targetAddedSuccess: 'Alvo escaneado e adicionado com sucesso!',
     targetAddError: 'Falha ao adicionar alvo. Verifique se a Master Key está salva para o modo LIVE.',
@@ -265,6 +266,7 @@ export const translations = {
     liveModeDesc: 'Targets are stored in Postgres backend and queried via API.',
     demoModeDesc: 'Targets are analyzed in real-time and saved locally in your browser.',
     activeTargets: 'ACTIVE TARGETS',
+    targetUrl: 'Target URL',
     targetUrlPlaceholder: 'https://example.com',
     addTargetButton: 'ADD TARGET',
     targetAddedSuccess: 'Target scanned and added successfully!',
@@ -314,7 +316,7 @@ export const translations = {
 
 export const detectLanguage = (): Language => {
   if (typeof window === 'undefined') return 'pt';
-  
+
   // Verifica se há idioma salvo no localStorage
   const savedLang = localStorage.getItem('language') as Language | null;
   if (savedLang && (savedLang === 'pt' || savedLang === 'en')) {
