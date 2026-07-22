@@ -110,11 +110,12 @@ export const translations = {
     liveModeDesc: 'Os alvos são salvos no backend Postgres e consultados pela API.',
     demoModeDesc: 'Os alvos são analisados em tempo real e salvos localmente no seu navegador.',
     activeTargets: 'ALVOS ATIVOS',
-    enterTargetUrl: 'https://exemplo.com.br',
+    targetUrlPlaceholder: 'https://exemplo.com.br',
     addTargetButton: 'ADICIONAR',
     targetAddedSuccess: 'Alvo escaneado e adicionado com sucesso!',
     targetAddError: 'Falha ao adicionar alvo. Verifique se a Master Key está salva para o modo LIVE.',
     currentModeLabel: 'Modo Atual:',
+    lastScanned: 'Último Scan',
 
     // Vulnerabilities page
     vulnerabilitiesTitle: 'Vulnerabilidades',
@@ -139,6 +140,20 @@ export const translations = {
     noDescription: 'Sem descrição disponível.',
     readFullArticle: 'Ler matéria completa',
     loadingIntelligence: 'Carregando feed de inteligência...',
+
+    // Welcome Onboarding Modal
+    welcomeTitle: 'Bem-vindo ao WebSecOps',
+    welcomeSubtitle: 'Plataforma Avançada de Monitoramento de Segurança & DAST',
+    welcomeBadge: 'AMBIENTE DEMO / SANDBOX',
+    welcomeDemoTitle: '🧪 Modo DEMO (Sandbox Interativo)',
+    welcomeDemoDesc: 'Qualquer visitante pode analisar URLs em tempo real, rodar simulações de varreduras Nuclei/ZAP DAST com terminal ativo e exportar relatórios. Os dados são salvos apenas no seu navegador.',
+    welcomeLiveTitle: '⚡ Modo LIVE (Produção Enterprise)',
+    welcomeLiveDesc: 'Modo de produção restrito a administradores. Consulta a base Postgres do servidor e dispara varreduras reais com controle de recursos via Master API Key.',
+    welcomeStartDemo: '🚀 Explorar Modo DEMO (Sandbox)',
+    welcomeEnterKey: '🔑 Inserir Master Key (LIVE)',
+    welcomeDontShow: 'Não mostrar esta mensagem novamente',
+    welcomeArchitectureBadge: '📌 ARQUITETURA & IMPLANTAÇÃO EMPRESARIAL',
+    welcomeArchitectureDesc: 'Este portal público (websecops.tech) é uma Vitrine Interativa & Sandbox de Portfólio. Em ambientes corporativos reais, o WebSecOps é implantado On-Premise (Docker/K8s) na intranet da empresa, garantindo Privacidade por Design (Privacy-by-Design) e zero vazamento de vulnerabilidades.',
   },
   en: {
     // Sidebar
@@ -250,11 +265,12 @@ export const translations = {
     liveModeDesc: 'Targets are stored in Postgres backend and queried via API.',
     demoModeDesc: 'Targets are analyzed in real-time and saved locally in your browser.',
     activeTargets: 'ACTIVE TARGETS',
-    enterTargetUrl: 'https://example.com',
+    targetUrlPlaceholder: 'https://example.com',
     addTargetButton: 'ADD TARGET',
     targetAddedSuccess: 'Target scanned and added successfully!',
     targetAddError: 'Failed to add target. Ensure Master Key is set for LIVE mode.',
     currentModeLabel: 'Current Mode:',
+    lastScanned: 'Last Scanned',
 
     // Vulnerabilities page
     vulnerabilitiesTitle: 'Vulnerabilities',
@@ -279,6 +295,20 @@ export const translations = {
     noDescription: 'No description available.',
     readFullArticle: 'Read Full Article',
     loadingIntelligence: 'Loading threat intelligence feed...',
+
+    // Welcome Onboarding Modal
+    welcomeTitle: 'Welcome to WebSecOps',
+    welcomeSubtitle: 'Advanced Security Monitoring & DAST Platform',
+    welcomeBadge: 'DEMO / SANDBOX ENVIRONMENT',
+    welcomeDemoTitle: '🧪 DEMO Mode (Interactive Sandbox)',
+    welcomeDemoDesc: 'Any visitor can analyze URLs in real-time, run Nuclei/ZAP DAST scan simulations with live terminal logs, and export reports. Data is saved locally in your browser.',
+    welcomeLiveTitle: '⚡ LIVE Mode (Enterprise Production)',
+    welcomeLiveDesc: 'Production mode restricted to administrators. Queries the server Postgres database and runs active scans with resource management via Master API Key.',
+    welcomeStartDemo: '🚀 Explore DEMO Mode (Sandbox)',
+    welcomeEnterKey: '🔑 Enter Master Key (LIVE)',
+    welcomeDontShow: "Don't show this message again",
+    welcomeArchitectureBadge: '📌 ENTERPRISE ARCHITECTURE & DEPLOYMENT',
+    welcomeArchitectureDesc: 'This public portal (websecops.tech) serves as an Interactive Showcase & Portfolio Sandbox. In corporate environments, WebSecOps is deployed On-Premise (Docker/K8s) inside the company intranet, ensuring Privacy-by-Design and zero vulnerability leakage.',
   },
 };
 

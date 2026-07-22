@@ -112,7 +112,7 @@ export default function Home() {
   }
 
   const handleDeleteTarget = async (id: number) => {
-    if (!confirm(translate('areYouSure'))) return;
+    if (!confirm(t('areYouSure'))) return;
 
     try {
       if (appMode === 'demo') {
@@ -251,14 +251,14 @@ export default function Home() {
         <div className="flex items-center gap-4 text-xs font-mono">
           <div className="flex items-center gap-2 bg-cyber-panel border border-white/10 rounded px-2 py-1">
             {isAdmin ? (
-                <button
-                  onClick={() => { setAppMode('live'); setAppModeState('live'); }}
-                  className={`px-3 py-1 rounded uppercase tracking-wider transition-colors ${appMode === 'live' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
-                >
-                  LIVE
-                </button>
+              <button
+                onClick={() => { setAppMode('live'); setAppModeState('live'); }}
+                className={`px-3 py-1 rounded uppercase tracking-wider transition-colors ${appMode === 'live' ? 'bg-cyber-primary text-black' : 'text-gray-400 hover:text-white'}`}
+              >
+                LIVE
+              </button>
             ) : (
-                <span className="px-3 py-1 rounded uppercase tracking-wider text-gray-500 line-through" title="Admin only">LIVE</span>
+              <span className="px-3 py-1 rounded uppercase tracking-wider text-gray-500 line-through" title="Admin only">LIVE</span>
             )}
             <button
               onClick={() => { setAppMode('demo'); setAppModeState('demo'); }}
@@ -272,17 +272,17 @@ export default function Home() {
             <span>{t('loadingData').toUpperCase()}</span>
           </div>
           <div className="bg-cyber-panel border border-white/10 px-4 py-2 rounded">
-            v2.1.0-DEV
+            v2.1.0-beta
           </div>
           {isAdmin && (
-              <button
-                onClick={handleSync}
-                disabled={isSyncing}
-                className="flex items-center gap-2 bg-cyber-panel border border-white/10 px-4 py-2 rounded hover:bg-white/5 transition-colors text-xs font-mono uppercase tracking-wider hover:text-cyber-primary"
-              >
-                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'UPDATING...' : t('syncVulnerabilities').toUpperCase()}
-              </button>
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="flex items-center gap-2 bg-cyber-panel border border-white/10 px-4 py-2 rounded hover:bg-white/5 transition-colors text-xs font-mono uppercase tracking-wider hover:text-cyber-primary"
+            >
+              <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'UPDATING...' : t('syncVulnerabilities').toUpperCase()}
+            </button>
           )}
         </div>
       </header>

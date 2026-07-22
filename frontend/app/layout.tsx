@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 };
 
 import AdminLogin from "@/components/AdminLogin";
+import WelcomeModal from "@/components/WelcomeModal";
 
 export default function RootLayout({
   children,
@@ -37,6 +38,7 @@ export default function RootLayout({
             {children}
           </main>
           <AdminLogin />
+          <WelcomeModal />
         </LanguageProvider>
       </body>
     </html>
