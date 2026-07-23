@@ -148,6 +148,15 @@ class TechDetector:
 
         return tech_stack
 
+    # WhatWeb plugins that are HTTP attributes or meta info, not software technologies
+    IGNORED_PLUGINS = {
+        "Country", "IP", "Title", "Unassigned", "HTML5", "Cookies", "HttpOnly",
+        "Secure", "MetaGenerator", "X-UA-Compatible", "Strict-Transport-Security",
+        "Content-Security-Policy", "OpenGraph", "Script", "Header", "RedirectLocation",
+        "String", "HTTPServer", "X-Powered-By", "X-Frame-Options", "X-XSS-Protection",
+        "X-Content-Type-Options", "Set-Cookie", "Frame"
+    }
+
     # 3. Unlocked Dynamic WhatWeb Plugin Parser
     def _parse_whatweb_json(self, raw_json: str) -> Dict[str, Any]:
         tech_stack: Dict[str, Any] = {}
@@ -157,7 +166,31 @@ class TechDetector:
                 return tech_stack
             plugins: Dict[str, Any] = entries[0].get("plugins", {})
             for plugin_name, plugin_data in plugins.items():
-                if plugin_name in {"Country", "IP", "Title", "Unassigned", "HTML5"}:
+                if plugin_name in self.IGNORED_PLUGINS:
+                    # Parse HTTPServer and X-Powered-By specifically for software name
+                    if plugin_name == "HTTPServer":
+                        strings = plugin_data.get("string", [])
+                        string_val = str(strings[0]) if strings else ""
+                        low = string_val.lower()
+                        if "apache-coyote" in low or "coyote" in low:
+                            self._add_tech(tech_stack, "Apache Tomcat", self._extract_version(string_val), "Web Server")
+                        elif "nginx" in low:
+                            self._add_tech(tech_stack, "Nginx", self._extract_version(string_val), "Web Server")
+                        elif "apache" in low and "Apache Tomcat" not in tech_stack:
+                            self._add_tech(tech_stack, "Apache", self._extract_version(string_val), "Web Server")
+                        elif "iis" in low:
+                            self._add_tech(tech_stack, "IIS", self._extract_version(string_val), "Web Server")
+                    elif plugin_name == "X-Powered-By":
+                        strings = plugin_data.get("string", [])
+                        string_val = str(strings[0]) if strings else ""
+                        low = string_val.lower()
+                        if "php" in low:
+                            self._add_tech(tech_stack, "PHP", self._extract_version(string_val), "Programming Language")
+                        elif "servlet" in low or "jsp" in low:
+                            self._add_tech(tech_stack, "Java Servlet", self._extract_version(string_val), "Web Framework")
+                            self._add_tech(tech_stack, "Java", None, "Programming Language")
+                        elif "asp.net" in low:
+                            self._add_tech(tech_stack, "ASP.NET", self._extract_version(string_val), "Programming Language")
                     continue
 
                 versions = plugin_data.get("version", [])
@@ -167,48 +200,6 @@ class TechDetector:
 
                 name = plugin_name
                 category = "Detected"
-
-                if plugin_name == "HTTPServer":
-                    low = string_val.lower()
-                    if "nginx" in low:
-                        name = "Nginx"
-                        category = "Web Server"
-                        version = version or self._extract_version(string_val)
-                    elif "apache-coyote" in low or "coyote" in low:
-                        name = "Apache Tomcat"
-                        category = "Web Server"
-                        version = version or self._extract_version(string_val)
-                    elif "apache" in low:
-                        name = "Apache"
-                        category = "Web Server"
-                        version = version or self._extract_version(string_val)
-                    elif "iis" in low:
-                        name = "IIS"
-                        category = "Web Server"
-                        version = version or self._extract_version(string_val)
-                    else:
-                        name = f"Server ({string_val[:20]})"
-                        category = "Web Server"
-
-                elif plugin_name == "X-Powered-By":
-                    low = string_val.lower()
-                    if "php" in low:
-                        name = "PHP"
-                        category = "Programming Language"
-                        version = version or self._extract_version(string_val)
-                    elif "servlet" in low or "jsp" in low:
-                        name = "Java Servlet"
-                        category = "Web Framework"
-                        version = version or self._extract_version(string_val)
-                    elif "asp.net" in low:
-                        name = "ASP.NET"
-                        category = "Programming Language"
-                        version = version or self._extract_version(string_val)
-                    elif "express" in low:
-                        name = "Express"
-                        category = "Web Framework"
-                    else:
-                        continue
 
                 # Category inference for plugins
                 if "CMS" in plugin_name or plugin_name in {"WordPress", "Drupal", "Joomla"}:
@@ -223,6 +214,10 @@ class TechDetector:
                     category = "Web Server"
 
                 self._add_tech(tech_stack, name, version, category)
+
+            # Cleanup duplicates: If Tomcat is present, remove generic Apache
+            if "Apache Tomcat" in tech_stack and "Apache" in tech_stack:
+                del tech_stack["Apache"]
 
         except Exception as exc:
             print(f"[!] WhatWeb JSON parse error: {exc}")
