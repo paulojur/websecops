@@ -159,15 +159,15 @@ export default function WelcomeModal() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Check className="w-3.5 h-3.5 text-cyber-primary shrink-0" />
-                                    <span>Análise em tempo real de alvos web via Wappalyzer + CVE Correlation.</span>
+                                    <span>{t('welcomeFeature1')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Check className="w-3.5 h-3.5 text-cyber-primary shrink-0" />
-                                    <span>Simulação interativa de Scans DAST (Nuclei & ZAP) com terminal em tempo real.</span>
+                                    <span>{t('welcomeFeature2')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Check className="w-3.5 h-3.5 text-cyber-primary shrink-0" />
-                                    <span>Exportação de relatórios profissionais em PDF, CSV e tickets prontos para o Jira.</span>
+                                    <span>{t('welcomeFeature3')}</span>
                                 </div>
                             </div>
                         </div>

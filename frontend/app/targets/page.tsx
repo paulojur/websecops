@@ -140,7 +140,7 @@ export default function TargetsPage() {
 
             <div className="glass-panel p-4 rounded-lg border border-white/10 flex justify-between items-center">
                 <div>
-                    <p className="text-xs uppercase tracking-widest text-gray-400">Modo Atual: <span className="text-cyber-primary font-bold">{appMode.toUpperCase()}</span></p>
+                    <p className="text-xs uppercase tracking-widest text-gray-400">{t('currentModeLabel')} <span className="text-cyber-primary font-bold">{appMode.toUpperCase()}</span></p>
                     <p className="text-xs text-gray-300 mt-1">
                         {appMode === 'demo' ? t('demoModeDesc') : t('liveModeDesc')}
                     </p>
@@ -151,7 +151,7 @@ export default function TargetsPage() {
                         className={`text-xs px-3 py-1.5 rounded border transition-colors flex items-center gap-1 ${isAdmin ? 'border-cyber-primary text-cyber-primary bg-cyber-primary/10' : 'border-white/10 text-gray-400 hover:text-white'}`}
                     >
                         <Key className="w-3.5 h-3.5" />
-                        {isAdmin ? 'Admin Authenticated' : 'Authenticate Admin'}
+                        {isAdmin ? t('masterKeyConfigured') : t('enterMasterKeyBtn')}
                     </button>
                 )}
             </div>
@@ -203,7 +203,7 @@ export default function TargetsPage() {
                                     {tItem.potential_vulns > 0 && (
                                         <span className="bg-red-500/20 text-red-400 text-xs px-2 py-1 rounded font-bold border border-red-500/30 flex items-center gap-1">
                                             <ShieldAlert className="w-3 h-3" />
-                                            {tItem.potential_vulns} RISCOS
+                                            {tItem.potential_vulns} {tItem.potential_vulns === 1 ? t('riskLabel').toUpperCase() : t('risksLabel').toUpperCase()}
                                         </span>
                                     )}
                                 </div>

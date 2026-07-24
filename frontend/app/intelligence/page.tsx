@@ -37,11 +37,11 @@ export default function IntelligencePage() {
                 </div>
                 <button
                     onClick={async () => {
-                        if (confirm('Atualizar feed agora? Isso pode levar alguns segundos.')) {
+                        if (confirm(t('confirmUpdateFeed'))) {
                             try {
                                 await import('@/lib/api').then(m => m.syncIntelligence());
                                 window.location.reload();
-                            } catch (e) { alert('Erro ao sincronizar'); }
+                            } catch (e) { alert(t('errorSync')); }
                         }
                     }}
                     className="bg-cyber-accent/20 hover:bg-cyber-accent/30 text-cyber-accent border border-cyber-accent/50 px-4 py-2 rounded text-xs font-bold transition-colors uppercase tracking-wider"

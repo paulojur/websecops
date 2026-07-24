@@ -82,9 +82,9 @@ export default function Home() {
       // Refresh list
       const t = appMode === 'demo' ? getDemoTargets() : await getTargets();
       setTargets(t);
-      alert('Target scanned successfully!');
+      alert(t('targetAddedSuccess'));
     } catch (error) {
-      alert('Failed to scan target.');
+      alert(t('targetAddError'));
       console.error(error);
     } finally {
       setLoadingTarget(false);
@@ -124,7 +124,7 @@ export default function Home() {
       setTargets(targetsList);
     } catch (e) {
       console.error("Failed to delete target", e);
-      alert('Failed to delete target');
+      alert(t('errorLoading'));
     }
   }
 
@@ -132,7 +132,7 @@ export default function Home() {
     setIsSyncing(true);
     try {
       await syncVulnerabilities();
-      alert('Database synchronization started. It may take a few moments to reflect changes.');
+      alert(t('syncStarted'));
       // Refresh all data
       const v = await getVulnerabilities(10);
       const mode = getAppMode();
@@ -143,7 +143,7 @@ export default function Home() {
       setStats(s);
     } catch (e) {
       console.error("Sync failed", e);
-      alert('Failed to synchronize database.');
+      alert(t('syncFailed'));
     } finally {
       setIsSyncing(false);
     }
@@ -191,7 +191,7 @@ export default function Home() {
                 <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Filter by subject, CVE or keywords..."
+                  placeholder={t('filterBySubject')}
                   className="w-full bg-white/5 border border-white/10 rounded pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-cyber-primary transition-colors"
                   value={riskFilter}
                   onChange={(e) => setRiskFilter(e.target.value)}
@@ -207,7 +207,7 @@ export default function Home() {
                 <div className="space-y-4">
                   {filteredCorrelations.length === 0 ? (
                     <p className="text-gray-500 text-center">
-                      {riskFilter ? t('noCVEFound') : 'No specific public exploits linked to detected version (Generic alert).'}
+                      {riskFilter ? t('noCVEFound') : t('noPublicExploits')}
                     </p>
                   ) : (
                     filteredCorrelations.map((c: any, i) => (
@@ -222,7 +222,7 @@ export default function Home() {
                         {c.correlation_reason && <p className="text-xs text-gray-500 mt-2">{c.correlation_reason}</p>}
                         {c.confidence_reason && <p className="text-xs text-gray-500 mt-1">{c.confidence_reason}</p>}
                         <div className="mt-2 text-xs text-gray-500">
-                          Published: {new Date(c.published).toLocaleDateString()} | Severity: {c.severity}
+                          {t('publishedLabel')} {new Date(c.published).toLocaleDateString()} | {t('severityLabel')} {c.severity}
                         </div>
                       </div>
                     ))
@@ -281,7 +281,7 @@ export default function Home() {
               className="flex items-center gap-2 bg-cyber-panel border border-white/10 px-4 py-2 rounded hover:bg-white/5 transition-colors text-xs font-mono uppercase tracking-wider hover:text-cyber-primary"
             >
               <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'UPDATING...' : t('syncVulnerabilities').toUpperCase()}
+              {isSyncing ? t('updating') : t('syncVulnerabilities').toUpperCase()}
             </button>
           )}
         </div>
@@ -312,7 +312,7 @@ export default function Home() {
         <StatCard title={t('high')} value={stats.high_count} icon={ShieldAlert} color="text-orange-400" />
 
         <div className="glass-panel p-4 rounded-lg flex flex-col items-center justify-center relative min-h-[160px]">
-          <h3 className="text-xs text-gray-400 uppercase tracking-widest absolute top-4 left-4">THREAT DISTRIBUTION</h3>
+          <h3 className="text-xs text-gray-400 uppercase tracking-widest absolute top-4 left-4">{t('threatDistribution')}</h3>
           <SeverityChart stats={stats} />
         </div>
       </div>
@@ -344,7 +344,7 @@ export default function Home() {
                     <p className="text-xs text-gray-500 mt-2 line-clamp-2">{v.correlation_reason}</p>
                   )}
                   <div className="text-xs text-gray-500 mt-2 flex justify-between">
-                    <span>Source: {v.source}</span>
+                    <span>{t('sourceLabel')} {v.source}</span>
                     <span>{new Date(v.published).toLocaleDateString()}</span>
                   </div>
                 </motion.div>
@@ -356,7 +356,7 @@ export default function Home() {
           <div className="glass-panel p-6 rounded-lg overflow-hidden flex flex-col h-[400px]">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold flex items-center gap-2 text-cyber-primary">
-                <Globe className="w-5 h-5" /> TECH STACK INVENTORY
+                <Globe className="w-5 h-5" /> {t('techStackInventory')}
               </h2>
               <form onSubmit={handleAddTarget} className="flex gap-2">
                 <input
@@ -384,7 +384,7 @@ export default function Home() {
 
                   {appMode === 'demo' && (
                     <div className="absolute top-2 left-2 text-[10px] uppercase tracking-widest bg-cyber-secondary/15 text-cyber-secondary border border-cyber-secondary/20 px-2 py-0.5 rounded">
-                      local demo
+                      {t('localDemo')}
                     </div>
                   )}
 
@@ -395,7 +395,7 @@ export default function Home() {
                       className="absolute top-2 right-2 flex items-center gap-1 bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-500/30 animate-pulse cursor-pointer hover:bg-red-500/30 transition-colors"
                     >
                       <ShieldAlert className="w-3 h-3" />
-                      {target.potential_vulns} POTENTIAL VULNS
+                      {target.potential_vulns} {t('potentialVulns')}
                     </div>
                   )}
 
@@ -417,11 +417,11 @@ export default function Home() {
                     )}
                   </div>
                   <div className="mt-2 text-[10px] text-gray-500 flex justify-between items-end">
-                    <span>{t('lastScanned')}: {target.last_scan ? new Date(target.last_scan).toLocaleString() : 'Never'}</span>
+                    <span>{t('lastScanned')}: {target.last_scan ? new Date(target.last_scan).toLocaleString() : t('never')}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteTarget(target.id); }}
                       className="text-gray-500 hover:text-red-500 transition-colors"
-                      title="Remove Target"
+                      title={t('removeTarget')}
                     >
                       <Trash className="w-3 h-3" />
                     </button>

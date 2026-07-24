@@ -459,7 +459,7 @@ export default function ScansPage() {
                         className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-xs font-bold transition-colors ${isAdmin ? 'bg-cyber-primary/20 border-cyber-primary text-cyber-primary' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}
                     >
                         <Key className="w-4 h-4" />
-                        {isAdmin ? 'Admin Authenticated' : 'Authenticate Admin'}
+                        {isAdmin ? t('masterKeyConfigured') : t('enterMasterKeyBtn')}
                     </button>
                 </div>
             </header>
@@ -486,7 +486,7 @@ export default function ScansPage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 mb-1 uppercase">Modo de Scan</label>
+                                <label className="block text-xs font-bold text-gray-400 mb-1 uppercase">{t('scanModeLabel')}</label>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                                     <button
                                         type="button"
@@ -627,7 +627,7 @@ export default function ScansPage() {
                                 <div className="w-px h-4 bg-white/10 mx-2"></div>
 
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[10px] uppercase font-bold text-gray-500">Origem:</span>
+                                    <span className="text-[10px] uppercase font-bold text-gray-500">{t('originLabel')}</span>
                                     <div className="flex gap-1">
                                         <button
                                             onClick={() => setSourceFilter('ALL')}
@@ -726,7 +726,7 @@ export default function ScansPage() {
                                 <p className="text-xs text-gray-400 mt-2">{alert.description}</p>
                                 {alert.remediations?.[0] && (
                                     <div className="mt-3 bg-black/40 p-3 rounded border border-white/5 text-xs">
-                                        <p className="text-cyber-secondary font-bold mb-1">Recomendação:</p>
+                                        <p className="text-cyber-secondary font-bold mb-1">{t('recommendationLabel')}</p>
                                         <p className="text-gray-300">{alert.remediations[0].recommendation}</p>
                                     </div>
                                 )}
@@ -810,7 +810,7 @@ export default function ScansPage() {
 
                     <div className="flex-1 overflow-y-auto space-y-3">
                         {savedHistory.length === 0 && (
-                            <p className="text-xs text-gray-500 italic">Nenhum scan salvo no histórico local.</p>
+                            <p className="text-xs text-gray-500 italic">{t('noSavedScansText')}</p>
                         )}
 
                         {savedHistory.map((item, idx) => (
