@@ -8,6 +8,8 @@ export default function AdminLogin() {
     const [isOpen, setIsOpen] = useState(false);
     const [apiKey, setApiKey] = useState('');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [authError, setAuthError] = useState('');
 
     useEffect(() => {
         const stored = localStorage.getItem('admin_api_key');
@@ -22,15 +24,33 @@ export default function AdminLogin() {
         }
     }, []);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setAuthError('');
+        
         if (apiKey) {
-            localStorage.setItem('admin_api_key', apiKey);
-            setIsLoggedIn(true);
-            setIsOpen(false);
-            setAppMode('live'); // Unlock live mode
-            window.dispatchEvent(new Event('storage'));
-            window.location.reload(); // Reload to apply API key in memory
+            setIsAuthenticating(true);
+            try {
+                // Call backend to verify API Key
+                const res = await fetch(`/api/v1/auth/verify`, {
+                    headers: { 'X-API-Key': apiKey }
+                });
+
+                if (res.ok) {
+                    localStorage.setItem('admin_api_key', apiKey);
+                    setIsLoggedIn(true);
+                    setIsOpen(false);
+                    setAppMode('live'); // Unlock live mode
+                    window.dispatchEvent(new Event('storage'));
+                    window.location.reload(); // Reload to apply API key in memory
+                } else {
+                    setAuthError('Master API Key inválida. Acesso negado.');
+                }
+            } catch (err) {
+                setAuthError('Erro ao conectar com o backend para verificar a chave.');
+            } finally {
+                setIsAuthenticating(false);
+            }
         }
     };
 
@@ -96,13 +116,16 @@ export default function AdminLogin() {
                                         onChange={(e) => setApiKey(e.target.value)}
                                         className="w-full bg-black/50 border border-white/10 rounded p-3 text-white focus:border-cyber-primary outline-none"
                                         autoFocus
+                                        disabled={isAuthenticating}
                                     />
+                                    {authError && <p className="text-red-500 text-xs mt-2 font-bold">{authError}</p>}
                                 </div>
                                 <button
                                     type="submit"
-                                    className="w-full bg-cyber-primary text-black font-bold py-2 rounded hover:bg-white transition-colors"
+                                    disabled={isAuthenticating}
+                                    className="w-full bg-cyber-primary text-black font-bold py-2 rounded hover:bg-white transition-colors disabled:opacity-50"
                                 >
-                                    Autenticar
+                                    {isAuthenticating ? 'Autenticando...' : 'Autenticar'}
                                 </button>
                             </form>
                         )}
