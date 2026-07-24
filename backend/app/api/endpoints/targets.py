@@ -107,29 +107,29 @@ def build_correlation_explanation(vuln: Dict[str, Any]) -> Dict[str, str]:
     if keyword:
         if any(char.isdigit() for char in keyword):
             return {
-                "correlation_reason": f"Correlacao por tecnologia e versao detectadas em '{keyword}'.",
+                "correlation_reason": f"Correlation based on technology and version detected in '{keyword}'.",
                 "confidence": "HIGH",
-                "confidence_reason": "A busca encontrou nome + versao, o que reduz o ruido da correlacao local.",
+                "confidence_reason": "Search found exact name and version, reducing the noise of local correlation.",
             }
 
         return {
-            "correlation_reason": f"Correlacao por nome da tecnologia em '{keyword}'.",
+            "correlation_reason": f"Correlation based on technology name in '{keyword}'.",
             "confidence": "LOW",
-            "confidence_reason": "Nao ha versao confirmada; trate este item como hipotese ate validar o inventario real.",
+            "confidence_reason": "No confirmed version; treat this item as a hypothesis until the actual inventory is validated.",
         }
 
     score = vuln.get("score")
     if score:
         return {
-            "correlation_reason": f"Correlacao baseada em CVSS {score} e nos sinais de tecnologia do alvo.",
+            "correlation_reason": f"Correlation based on CVSS {score} and target technology signals.",
             "confidence": "LOW",
-            "confidence_reason": "Nao foi possivel extrair uma chave de correlacao mais especifica.",
+            "confidence_reason": "Could not extract a more specific correlation key.",
         }
 
     return {
-        "correlation_reason": "Associado com base nas tecnologias detectadas para o alvo.",
+        "correlation_reason": "Associated based on technologies detected for the target.",
         "confidence": "LOW",
-        "confidence_reason": "Nao foi possivel derivar uma correspondencia explicita entre tecnologia e CVE.",
+        "confidence_reason": "Could not derive an explicit match between technology and CVE.",
     }
 
 @router.post("/scan", response_model=TargetResponse)
@@ -261,7 +261,7 @@ def analyze_target(target_in: TargetCreate, request: Request, db: Session = Depe
                     "remediation": remediation_engine.for_cve(vuln),
                 })
             
-            prioritized_vulns = remediation_engine.prioritize(enriched_vulns)
+            prioritized_vulns = remediation_engine.prioritize(enriched_vulns)[:5] # Limit to top 5 to avoid false-positive spam
             correlations = prioritized_vulns
             summary = remediation_engine.summarize_target(prioritized_vulns)
             hardening = remediation_engine.baseline(tech_stack)
@@ -328,7 +328,7 @@ def get_target_correlations(target_id: int, db: Session = Depends(get_db)):
             "remediation": remediation_engine.for_cve(vuln),
         })
     
-    prioritized_vulns = remediation_engine.prioritize(enriched_vulns)
+    prioritized_vulns = remediation_engine.prioritize(enriched_vulns)[:5] # Limit to top 5
 
     return {
         "target": target,

@@ -12,71 +12,71 @@ class RemediationEngine:
     HEADER_RULES = [
         {
             "keys": ["x-frame-options", "content security policy", "frame-ancestors", "clickjacking"],
-            "title": "Protecao contra clickjacking",
+            "title": "Clickjacking Protection",
             "severity": "MEDIUM",
             "confidence": "HIGH",
-            "confidence_reason": "O scanner observou ausencia ou fragilidade em cabecalho diretamente verificavel na resposta HTTP.",
+            "confidence_reason": "Scanner observed missing or weak headers directly verifiable in the HTTP response.",
             "category": "HTTP Headers",
-            "root_cause": "Headers de navegador ausentes ou incompletos",
-            "why": "A aplicacao pode ser renderizada dentro de frames por origens nao autorizadas.",
-            "recommendation": "Defina Content-Security-Policy com frame-ancestors ou use X-Frame-Options quando precisar de compatibilidade legada.",
-            "next_step": "Validar em ambiente de homologacao quais origens realmente precisam enquadrar a aplicacao antes de aplicar a politica em producao.",
+            "root_cause": "Missing or incomplete browser security headers",
+            "why": "Application could be framed by unauthorized origins.",
+            "recommendation": "Define Content-Security-Policy with frame-ancestors or use X-Frame-Options for legacy compatibility.",
+            "next_step": "Validate which origins need framing access in staging before applying to production.",
             "nginx": "add_header Content-Security-Policy \"frame-ancestors 'self';\" always;",
             "apache": "Header always set Content-Security-Policy \"frame-ancestors 'self';\"",
         },
         {
             "keys": ["strict-transport-security", "hsts"],
-            "title": "Forcar HTTPS com HSTS",
+            "title": "Enforce HTTPS with HSTS",
             "severity": "MEDIUM",
             "confidence": "HIGH",
-            "confidence_reason": "O scanner consegue verificar diretamente se o cabecalho HSTS foi publicado na resposta HTTPS.",
+            "confidence_reason": "Scanner can directly verify if the HSTS header was published in the HTTPS response.",
             "category": "HTTP Headers",
-            "root_cause": "Headers de navegador ausentes ou incompletos",
-            "why": "Sem HSTS, usuarios podem ficar expostos a downgrade para HTTP em redes hostis.",
-            "recommendation": "Publique Strict-Transport-Security depois de validar que todo o dominio e subdominios funcionam corretamente em HTTPS.",
-            "next_step": "Confirmar que todos os subdominios suportam HTTPS antes de usar includeSubDomains.",
+            "root_cause": "Missing or incomplete browser security headers",
+            "why": "Without HSTS, users may be exposed to HTTP downgrade attacks on hostile networks.",
+            "recommendation": "Publish Strict-Transport-Security after validating that the entire domain and subdomains work correctly over HTTPS.",
+            "next_step": "Confirm all subdomains support HTTPS before using includeSubDomains.",
             "nginx": "add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;",
             "apache": "Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains\"",
         },
         {
             "keys": ["x-content-type-options", "mime sniff", "content type options"],
-            "title": "Bloquear MIME sniffing",
+            "title": "Block MIME Sniffing",
             "severity": "LOW",
             "confidence": "HIGH",
-            "confidence_reason": "A presenca ou ausencia de X-Content-Type-Options e verificavel diretamente na resposta HTTP.",
+            "confidence_reason": "The presence or absence of X-Content-Type-Options is directly verifiable in the HTTP response.",
             "category": "HTTP Headers",
-            "root_cause": "Headers de navegador ausentes ou incompletos",
-            "why": "Navegadores podem tentar interpretar arquivos com tipo diferente do declarado.",
-            "recommendation": "Defina X-Content-Type-Options como nosniff em todas as respostas.",
-            "next_step": "Aplicar o header e validar endpoints que servem arquivos estaticos ou uploads.",
+            "root_cause": "Missing or incomplete browser security headers",
+            "why": "Browsers may attempt to interpret files as a different MIME type than declared.",
+            "recommendation": "Set X-Content-Type-Options to nosniff on all responses.",
+            "next_step": "Apply the header and validate endpoints serving static files or uploads.",
             "nginx": "add_header X-Content-Type-Options \"nosniff\" always;",
             "apache": "Header always set X-Content-Type-Options \"nosniff\"",
         },
         {
             "keys": ["referrer-policy", "referrer policy"],
-            "title": "Reduzir vazamento de origem via Referer",
+            "title": "Reduce origin leakage via Referer",
             "severity": "LOW",
             "confidence": "HIGH",
-            "confidence_reason": "A politica de Referer e publicada em header e pode ser verificada sem inferencia.",
+            "confidence_reason": "Referrer policy is published in a header and can be verified without inference.",
             "category": "HTTP Headers",
-            "root_cause": "Headers de navegador ausentes ou incompletos",
-            "why": "URLs internas, parametros e caminhos podem vazar para sites externos pelo cabecalho Referer.",
-            "recommendation": "Use uma politica restritiva, equilibrando privacidade e compatibilidade.",
-            "next_step": "Validar fluxos externos de autenticacao, pagamentos e redirecionamentos antes de endurecer a politica.",
+            "root_cause": "Missing or incomplete browser security headers",
+            "why": "Internal URLs, parameters, and paths can leak to external sites via the Referer header.",
+            "recommendation": "Use a restrictive policy, balancing privacy and compatibility.",
+            "next_step": "Validate external authentication flows, payments, and redirects before hardening the policy.",
             "nginx": "add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;",
             "apache": "Header always set Referrer-Policy \"strict-origin-when-cross-origin\"",
         },
         {
             "keys": ["permissions-policy", "feature-policy"],
-            "title": "Restringir APIs sensiveis do navegador",
+            "title": "Restrict sensitive browser APIs",
             "severity": "LOW",
             "confidence": "MEDIUM",
-            "confidence_reason": "A ausencia do header e objetiva, mas o impacto depende das APIs realmente usadas pela aplicacao.",
+            "confidence_reason": "The absence of the header is objective, but the impact depends on the APIs actually used by the application.",
             "category": "HTTP Headers",
-            "root_cause": "Headers de navegador ausentes ou incompletos",
-            "why": "Recursos como camera, microfone e geolocalizacao devem ser liberados apenas quando necessarios.",
-            "recommendation": "Defina Permissions-Policy negando recursos que a aplicacao nao utiliza.",
-            "next_step": "Levantar quais APIs do navegador sao usadas legitimamente antes de publicar uma politica restritiva.",
+            "root_cause": "Missing or incomplete browser security headers",
+            "why": "Features like camera, microphone, and geolocation should only be allowed when necessary.",
+            "recommendation": "Set Permissions-Policy denying features that the application does not use.",
+            "next_step": "Identify which browser APIs are legitimately used before publishing a restrictive policy.",
             "nginx": "add_header Permissions-Policy \"geolocation=(), microphone=(), camera=()\" always;",
             "apache": "Header always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"",
         },
@@ -85,15 +85,15 @@ class RemediationEngine:
     COOKIE_RULES = [
         {
             "keys": ["cookie", "httponly", "secure flag", "samesite"],
-            "title": "Endurecer atributos de cookies",
+            "title": "Harden cookie attributes",
             "severity": "MEDIUM",
             "confidence": "MEDIUM",
-            "confidence_reason": "O scanner observou atributo ausente, mas a criticidade depende do tipo de cookie e do fluxo de autenticacao.",
+            "confidence_reason": "Scanner observed missing attributes, but criticality depends on the cookie type and authentication flow.",
             "category": "Cookies",
-            "root_cause": "Cookies de sessao sem atributos defensivos consistentes",
-            "why": "Cookies sem Secure, HttpOnly e SameSite aumentam risco de roubo, envio indevido ou abuso em ataques web.",
-            "recommendation": "Configure cookies de sessao com Secure, HttpOnly e SameSite=Lax ou Strict, conforme o fluxo da aplicacao.",
-            "next_step": "Classificar quais cookies sao de sessao/autenticacao antes de aplicar SameSite Strict em fluxos com federacao ou redirects externos.",
+            "root_cause": "Session cookies lacking consistent defensive attributes",
+            "why": "Cookies without Secure, HttpOnly, and SameSite increase risk of theft, unauthorized sending, or abuse in web attacks.",
+            "recommendation": "Configure session cookies with Secure, HttpOnly, and SameSite=Lax or Strict, according to the application flow.",
+            "next_step": "Classify which cookies are session/auth related before applying SameSite Strict on flows with federation or external redirects.",
             "nginx": "proxy_cookie_flags ~ secure httponly samesite=lax;",
             "apache": "Header edit* Set-Cookie \"^(.*)$\" \"$1; Secure; HttpOnly; SameSite=Lax\"",
         }
@@ -101,16 +101,16 @@ class RemediationEngine:
 
     BASELINE_RULES = [
         {
-            "title": "Aplicar baseline de headers de seguranca",
+            "title": "Apply security headers baseline",
             "severity": "INFO",
             "confidence": "MEDIUM",
-            "confidence_reason": "E uma recomendacao preventiva; precisa ser validada contra os fluxos reais da aplicacao.",
+            "confidence_reason": "This is a preventive recommendation; needs to be validated against actual application flows.",
             "category": "Hardening",
-            "root_cause": "Baseline defensivo ainda nao padronizado",
-            "evidence": "Recomendacao preventiva para aplicacoes web expostas.",
-            "why": "Mesmo sem alerta especifico, headers consistentes reduzem a superficie de ataque do navegador.",
-            "recommendation": "Padronize CSP frame-ancestors, HSTS, X-Content-Type-Options, Referrer-Policy e Permissions-Policy.",
-            "next_step": "Aplicar primeiro em homologacao, validar login, embeds, downloads, integracoes externas e depois promover para producao.",
+            "root_cause": "Defensive baseline not fully standardized",
+            "evidence": "Preventive recommendation for exposed web applications.",
+            "why": "Even without a specific alert, consistent headers reduce the browser's attack surface.",
+            "recommendation": "Standardize CSP frame-ancestors, HSTS, X-Content-Type-Options, Referrer-Policy, and Permissions-Policy.",
+            "next_step": "Apply first in staging, validate login, embeds, downloads, external integrations, then promote to production.",
             "nginx": "\n".join([
                 "add_header Content-Security-Policy \"frame-ancestors 'self';\" always;",
                 "add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;",
@@ -147,8 +147,8 @@ class RemediationEngine:
     def for_cve(self, vuln: Dict[str, Any]) -> Dict[str, Any]:
         cve_id = vuln.get("cve_id") or vuln.get("id") or str(vuln.get("alert", "")).split(":")[0]
         severity = (vuln.get("severity") or vuln.get("risk") or "MEDIUM").upper()
-        evidence = vuln.get("matched_keyword") or vuln.get("url") or "CVE correlacionada com a tecnologia detectada."
-        title = f"Atualizar componente afetado por {cve_id}" if cve_id else "Atualizar componente vulneravel"
+        evidence = vuln.get("matched_keyword") or vuln.get("url") or "CVE correlated with detected technology."
+        title = f"Update component affected by {cve_id}" if cve_id else "Update vulnerable component"
         confidence, confidence_reason = self._cve_confidence(vuln)
 
         return self._build(
@@ -158,10 +158,10 @@ class RemediationEngine:
                 "confidence": confidence,
                 "confidence_reason": confidence_reason,
                 "category": "CVE",
-                "root_cause": "Componente potencialmente vulneravel",
-                "why": "A tecnologia detectada possui vulnerabilidade publicada em base de CVEs. A versao exata deve ser confirmada antes de classificar como exploravel.",
-                "recommendation": "Confirme a versao instalada, aplique patch ou atualize o componente afetado, e registre evidencia da versao corrigida.",
-                "next_step": "Confirmar a versao real no servidor ou manifesto de dependencias antes de abrir incidente como vulnerabilidade confirmada.",
+                "root_cause": "Potentially vulnerable component",
+                "why": "The detected technology has a published vulnerability in the CVE database. The exact version must be confirmed before classifying as exploitable.",
+                "recommendation": "Confirm the installed version, apply patch or update the affected component, and record evidence of the fixed version.",
+                "next_step": "Confirm the actual version on the server or dependency manifest before opening an incident as a confirmed vulnerability.",
                 "nginx": "",
                 "apache": "",
             },
@@ -235,12 +235,12 @@ class RemediationEngine:
         groups: Dict[str, Dict[str, Any]] = {}
         for item in findings:
             remediation = item.get("remediation", item)
-            root_cause = remediation.get("root_cause") or remediation.get("category") or "Outros"
+            root_cause = remediation.get("root_cause") or remediation.get("category") or "Others"
             group = groups.setdefault(root_cause, {
                 "root_cause": root_cause,
                 "count": 0,
                 "highest_severity": "INFO",
-                "next_step": remediation.get("next_step", "Revisar evidencias e validar impacto antes de priorizar."),
+                "next_step": remediation.get("next_step", "Review evidence and validate impact before prioritizing."),
             })
             group["count"] += 1
             group["highest_severity"] = self._max_severity(group["highest_severity"], remediation.get("severity", item.get("severity", "INFO")))
@@ -249,10 +249,10 @@ class RemediationEngine:
 
     def _build(self, rule: Dict[str, Any], evidence: str, source: str) -> Dict[str, Any]:
         report = (
-            f"Risco: {rule['title']}. "
-            f"Evidencia: {evidence} "
-            f"Impacto: {rule['why']} "
-            f"Recomendacao: {rule['recommendation']}"
+            f"Risk: {rule['title']}. "
+            f"Evidence: {evidence} "
+            f"Impact: {rule['why']} "
+            f"Recommendation: {rule['recommendation']}"
         )
         return {
             "title": rule["title"],
@@ -286,28 +286,28 @@ class RemediationEngine:
         }
 
     def _alert_evidence(self, alert: Dict[str, Any]) -> str:
-        name = alert.get("alert") or alert.get("name") or "Alerta de seguranca"
+        name = alert.get("alert") or alert.get("name") or "Security Alert"
         url = alert.get("url")
         if url:
-            return f"{name} observado em {url}."
-        return f"{name} retornado pelo scanner."
+            return f"{name} observed at {url}."
+        return f"{name} returned by the scanner."
 
     def _correlation_reason(self, item: Dict[str, Any]) -> str:
         keyword = item.get("matched_keyword")
         if keyword:
-            return f"Associado porque a busca de CVEs encontrou correspondencia para '{keyword}'."
-        return "Associado com base nas tecnologias detectadas para o alvo."
+            return f"Associated because CVE search found a match for '{keyword}'."
+        return "Associated based on technologies detected for the target."
 
     def _cve_confidence(self, vuln: Dict[str, Any]) -> tuple[str, str]:
         keyword = str(vuln.get("matched_keyword") or "")
         if any(char.isdigit() for char in keyword):
             return (
                 "MEDIUM",
-                "Ha versao ou familia de versao na correlacao, mas ainda e necessario confirmar a versao instalada no alvo.",
+                "Contains version or family version in the correlation, but still requires confirmation of the installed version on the target.",
             )
         return (
             "LOW",
-            "A correlacao veio do nome da tecnologia sem versao confirmada; trate como hipotese ate validar inventario.",
+            "Correlation derived from technology name without confirmed version; treat as a hypothesis until inventory is validated.",
         )
 
     def _max_severity(self, current: str, candidate: str) -> str:
@@ -318,11 +318,11 @@ class RemediationEngine:
 
     def _analyst_note(self, total: int, top_items: List[Dict[str, Any]]) -> str:
         if total == 0:
-            return "Nenhum achado foi correlacionado agora. Isso reduz ruido, mas nao substitui revisao manual e validacao de configuracao."
+            return "No findings were correlated at this time. This reduces noise, but does not replace manual review and configuration validation."
         if total > 20:
-            return "Ha muitos achados potenciais. Priorize os grupos de causa raiz e confirme versoes antes de abrir varias tarefas separadas."
+            return "There are many potential findings. Prioritize root cause groups and confirm versions before opening multiple separate tasks."
         highest = top_items[0].get("severity") if top_items else "INFO"
-        return f"Comece pelos itens de maior severidade/confianca. Maior severidade observada nesta visao: {highest}."
+        return f"Start with the highest severity/confidence items. Highest severity observed in this view: {highest}."
 
     def _dedupe(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         seen = set()
