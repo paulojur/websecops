@@ -114,7 +114,7 @@ export const translations = {
     targetUrlPlaceholder: 'https://demo.testfire.net/',
     addTargetButton: 'ADICIONAR',
     targetAddedSuccess: 'Alvo escaneado e adicionado com sucesso!',
-    targetAddError: 'Falha ao adicionar alvo. Verifique se a Master Key está salva para o modo LIVE.',
+    targetAddError: 'Falha ao adicionar alvo. Se estiver no modo LIVE, verifique a Master Key. No modo DEMO, aguarde e tente novamente.',
     currentModeLabel: 'Modo Atual:',
     lastScanned: 'Último Scan',
 
@@ -205,6 +205,41 @@ export const translations = {
     welcomeFeature1: 'Análise em tempo real de alvos web via Deep Heuristics + CVE Correlation.',
     welcomeFeature2: 'Simulação interativa de Scans DAST (Nuclei & ZAP) com terminal em tempo real.',
     welcomeFeature3: 'Exportação de relatórios profissionais em PDF, CSV e tickets prontos para o Jira.',
+
+    // Demo Simulation
+    demoLogStarting: '[DEMO SIMULATION] Iniciando varredura interativa',
+    demoLogMapping: 'Mapeando estrutura do alvo, portas ativas e rotas HTTPS...',
+    demoLogNuclei: 'Executando templates Nuclei (CVEs, Footprints & Misconfigurations)...',
+    demoLogSpider: 'Executando Spider DAST e analisando headers de resposta...',
+    demoLogSignatures: 'Verificando assinaturas de vulnerabilidades e cabeçalhos de segurança...',
+    demoLogCorrelating: 'Correlacionando alertas com o banco de inteligência NVD...',
+    demoLogSuccess: 'Varredura concluída com sucesso!',
+    
+    // Demo Results
+    demoAlert1Desc: 'A aplicação web não retornou os cabeçalhos de segurança recomendados (X-Frame-Options, Content-Security-Policy, Strict-Transport-Security).',
+    demoAlert1Title: 'Adicionar Cabeçalhos de Segurança HTTP',
+    demoAlert1Rec: 'Configure os cabeçalhos X-Frame-Options: DENY, X-Content-Type-Options: nosniff e Content-Security-Policy no seu proxy/servidor web (Nginx/Apache).',
+    demoAlert1Report: 'Impacto: Permite ataques de Clickjacking e MIME Sniffing devido à ausência de diretivas HTTP rígidas.',
+    
+    demoAlert2Desc: 'Verificação da versão do protocolo TLS e ciphers suportados pelo servidor.',
+    demoAlert2Title: 'Desativar TLS 1.0 e 1.1',
+    demoAlert2Rec: 'Assegure que apenas TLS 1.2 e TLS 1.3 estejam habilitados no Nginx/Apache.',
+    demoAlert2Report: 'Recomendado desativar ciphers legados para conformidade com PCI-DSS.',
+    
+    demoAlert3Desc: 'Potencial vetor de injeção de scripts detectado em parâmetros de URL sem higienização adequada.',
+    demoAlert3Title: 'Higienização de Entrada e Encoding de Saída',
+    demoAlert3Rec: 'Aplique encoding HTML para dados dinâmicos exibidos no DOM e implemente uma política CSP (Content Security Policy) restritiva.',
+    demoAlert3Report: 'Ataques XSS permitem a execução de scripts maliciosos no navegador de usuários legítimos.',
+
+    demoCov1: 'Certificado SSL/TLS Válido',
+    demoCov2: 'Proteção contra Clickjacking (X-Frame-Options)',
+    demoCov3: 'Sanitização de Parâmetros (XSS)',
+    
+    demoAnalystNote: 'Varredura demonstrativa concluída. Foram identificados 3 alertas de severidade Média/Alta que requerem atenção de hardening.',
+    demoTriage1: 'Configuração de Cabeçalhos HTTP',
+    demoTriage1Next: 'Adicionar Nginx security headers',
+    demoTriage2: 'Validação de Parâmetros Web',
+    demoTriage2Next: 'Implementar Sanitização XSS',
   },
   en: {
     // Sidebar
@@ -320,7 +355,7 @@ export const translations = {
     targetUrlPlaceholder: 'https://example.com',
     addTargetButton: 'ADD TARGET',
     targetAddedSuccess: 'Target scanned and added successfully!',
-    targetAddError: 'Failed to add target. Ensure Master Key is set for LIVE mode.',
+    targetAddError: 'Failed to add target. If in LIVE mode, check your Master Key. In DEMO mode, wait and try again.',
     currentModeLabel: 'Current Mode:',
     lastScanned: 'Last Scanned',
 
@@ -411,6 +446,41 @@ export const translations = {
     welcomeFeature1: 'Real-time analysis of web targets via Deep Heuristics + CVE Correlation.',
     welcomeFeature2: 'Interactive simulation of DAST Scans (Nuclei & ZAP) with real-time terminal.',
     welcomeFeature3: 'Export professional reports in PDF, CSV, and Jira-ready tickets.',
+
+    // Demo Simulation
+    demoLogStarting: '[DEMO SIMULATION] Starting interactive scan',
+    demoLogMapping: 'Mapping target structure, active ports, and HTTPS routes...',
+    demoLogNuclei: 'Executing Nuclei templates (CVEs, Footprints & Misconfigurations)...',
+    demoLogSpider: 'Executing DAST Spider and analyzing response headers...',
+    demoLogSignatures: 'Checking vulnerability signatures and security headers...',
+    demoLogCorrelating: 'Correlating alerts with NVD intelligence database...',
+    demoLogSuccess: 'Scan completed successfully!',
+
+    // Demo Results
+    demoAlert1Desc: 'The web application did not return the recommended security headers (X-Frame-Options, Content-Security-Policy, Strict-Transport-Security).',
+    demoAlert1Title: 'Add HTTP Security Headers',
+    demoAlert1Rec: 'Configure X-Frame-Options: DENY, X-Content-Type-Options: nosniff, and Content-Security-Policy on your web server/proxy (Nginx/Apache).',
+    demoAlert1Report: 'Impact: Enables Clickjacking and MIME Sniffing attacks due to the absence of strict HTTP directives.',
+    
+    demoAlert2Desc: 'Verification of TLS protocol version and ciphers supported by the server.',
+    demoAlert2Title: 'Disable TLS 1.0 and 1.1',
+    demoAlert2Rec: 'Ensure that only TLS 1.2 and TLS 1.3 are enabled in Nginx/Apache.',
+    demoAlert2Report: 'Recommended to disable legacy ciphers for PCI-DSS compliance.',
+    
+    demoAlert3Desc: 'Potential script injection vector detected in URL parameters without proper sanitization.',
+    demoAlert3Title: 'Input Sanitization and Output Encoding',
+    demoAlert3Rec: 'Apply HTML encoding to dynamic data displayed in the DOM and implement a restrictive CSP (Content Security Policy).',
+    demoAlert3Report: 'XSS attacks allow the execution of malicious scripts in the browser of legitimate users.',
+
+    demoCov1: 'Valid SSL/TLS Certificate',
+    demoCov2: 'Clickjacking Protection (X-Frame-Options)',
+    demoCov3: 'Parameter Sanitization (XSS)',
+    
+    demoAnalystNote: 'Demonstrative scan completed. Identified 3 Medium/High severity alerts that require hardening attention.',
+    demoTriage1: 'HTTP Headers Configuration',
+    demoTriage1Next: 'Add Nginx security headers',
+    demoTriage2: 'Web Parameters Validation',
+    demoTriage2Next: 'Implement XSS Sanitization',
   },
 };
 

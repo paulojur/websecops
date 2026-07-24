@@ -175,14 +175,14 @@ export default function ScansPage() {
     // Interactive Demo Scan Simulation for visitors
     const runDemoSimulationScan = () => {
         setScanStatus({ status: 'scanning', progress: 5 });
-        addLog(`[DEMO SIMULATION] Iniciando varredura interativa (${scanType.toUpperCase()}) em ${targetUrl}...`);
+        addLog(`${t('demoLogStarting')} (${scanType.toUpperCase()}) - ${targetUrl}...`);
 
         const steps = [
-            { pct: 20, log: 'Mapeando estrutura do alvo, portas ativas e rotas HTTPS...' },
-            { pct: 45, log: scanType === 'nuclei' ? 'Executando templates Nuclei (CVEs, Footprints & Misconfigurations)...' : 'Executando Spider DAST e analisando headers de resposta...' },
-            { pct: 70, log: 'Verificando assinaturas de vulnerabilidades e cabeçalhos de segurança...' },
-            { pct: 90, log: 'Correlacionando alertas com o banco de inteligência NVD...' },
-            { pct: 100, log: 'Varredura concluída com sucesso!' },
+            { pct: 20, log: t('demoLogMapping') },
+            { pct: 45, log: scanType === 'nuclei' ? t('demoLogNuclei') : t('demoLogSpider') },
+            { pct: 70, log: t('demoLogSignatures') },
+            { pct: 90, log: t('demoLogCorrelating') },
+            { pct: 100, log: t('demoLogSuccess') },
         ];
 
         let stepIndex = 0;
@@ -205,68 +205,68 @@ export default function ScansPage() {
                 alert: 'HTTP Missing Security Headers',
                 risk: 'Medium',
                 confidence: 'High',
-                description: 'A aplicação web não retornou os cabeçalhos de segurança recomendados (X-Frame-Options, Content-Security-Policy, Strict-Transport-Security).',
+                description: t('demoAlert1Desc'),
                 method: 'GET',
                 url: targetUrl,
                 sourceid: scanType === 'nuclei' ? 'nuclei' : 'zap',
                 remediations: [{
-                    title: 'Adicionar Cabeçalhos de Segurança HTTP',
+                    title: t('demoAlert1Title'),
                     category: 'Header Configuration',
                     confidence: 'High',
                     evidence: 'GET ' + targetUrl,
-                    recommendation: 'Configure os cabeçalhos X-Frame-Options: DENY, X-Content-Type-Options: nosniff e Content-Security-Policy no seu proxy/servidor web (Nginx/Apache).',
-                    report_text: 'Impacto: Permite ataques de Clickjacking e MIME Sniffing devido à ausência de diretivas HTTP rígidas.'
+                    recommendation: t('demoAlert1Rec'),
+                    report_text: t('demoAlert1Report')
                 }]
             },
             {
                 alert: 'TLS Version - Deprecated Protocol Check',
                 risk: 'Low',
                 confidence: 'Medium',
-                description: 'Verificação da versão do protocolo TLS e ciphers suportados pelo servidor.',
+                description: t('demoAlert2Desc'),
                 method: 'GET',
                 url: targetUrl,
                 sourceid: 'nuclei',
                 remediations: [{
-                    title: 'Desativar TLS 1.0 e 1.1',
+                    title: t('demoAlert2Title'),
                     category: 'TLS Hardening',
                     confidence: 'High',
                     evidence: 'TLS 1.2 / TLS 1.3 Active',
-                    recommendation: 'Assegure que apenas TLS 1.2 e TLS 1.3 estejam habilitados no Nginx/Apache.',
-                    report_text: 'Recomendado desativar ciphers legados para conformidade com PCI-DSS.'
+                    recommendation: t('demoAlert2Rec'),
+                    report_text: t('demoAlert2Report')
                 }]
             },
             {
                 alert: 'Cross-Site Scripting (Reflected Candidate)',
                 risk: scanType === 'active' ? 'High' : 'Medium',
                 confidence: 'Medium',
-                description: 'Potencial vetor de injeção de scripts detectado em parâmetros de URL sem higienização adequada.',
+                description: t('demoAlert3Desc'),
                 method: 'GET',
                 url: `${targetUrl}/?q=%3Cscript%3Ealert(1)%3C/script%3E`,
                 sourceid: 'zap',
                 remediations: [{
-                    title: 'Higienização de Entrada e Encoding de Saída',
+                    title: t('demoAlert3Title'),
                     category: 'Input Validation',
                     confidence: 'High',
                     evidence: 'Param: q',
-                    recommendation: 'Aplique encoding HTML para dados dinâmicos exibidos no DOM e implemente uma política CSP (Content Security Policy) restritiva.',
-                    report_text: 'Ataques XSS permitem a execução de scripts maliciosos no navegador de usuários legítimos.'
+                    recommendation: t('demoAlert3Rec'),
+                    report_text: t('demoAlert3Report')
                 }]
             }
         ];
 
         const mockCoverage: CoverageItem[] = [
-            { name: 'Certificado SSL/TLS Válido', status: 'pass', cwe: 'CWE-295' },
-            { name: 'Proteção contra Clickjacking (X-Frame-Options)', status: 'fail', cwe: 'CWE-1021' },
-            { name: 'Sanitização de Parâmetros (XSS)', status: 'fail', cwe: 'CWE-79' },
+            { name: t('demoCov1'), status: 'pass', cwe: 'CWE-295' },
+            { name: t('demoCov2'), status: 'fail', cwe: 'CWE-1021' },
+            { name: t('demoCov3'), status: 'fail', cwe: 'CWE-79' },
             { name: 'Strict-Transport-Security (HSTS)', status: 'pass', cwe: 'CWE-523' },
         ];
 
         const mockTriage: ScanTriage = {
             total_alerts: mockAlerts.length,
-            analyst_note: 'Varredura demonstrativa concluída. Foram identificados 3 alertas de severidade Média/Alta que requerem atenção de hardening.',
+            analyst_note: t('demoAnalystNote'),
             risk_groups: [
-                { root_cause: 'Configuração de Cabeçalhos HTTP', count: 2, highest_severity: 'Medium', next_step: 'Adicionar Nginx security headers' },
-                { root_cause: 'Validação de Parâmetros Web', count: 1, highest_severity: 'High', next_step: 'Implementar Sanitização XSS' }
+                { root_cause: t('demoTriage1'), count: 2, highest_severity: 'Medium', next_step: t('demoTriage1Next') },
+                { root_cause: t('demoTriage2'), count: 1, highest_severity: 'High', next_step: t('demoTriage2Next') }
             ]
         };
 

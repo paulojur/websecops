@@ -74,7 +74,12 @@ export default function Home() {
         // Real scan but local storage only
         const { analyzeTarget } = await import('@/lib/api');
         const data = await analyzeTarget(newTarget);
-        saveDemoTarget(data.target);
+        saveDemoTarget({
+          ...data.target,
+          correlations: data.correlations || [],
+          summary: data.summary || {},
+          hardening: data.hardening || {}
+        });
       } else {
         await addTarget(newTarget);
       }
