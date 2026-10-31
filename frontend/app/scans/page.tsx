@@ -124,23 +124,6 @@ export default function ScansPage() {
         e.preventDefault();
         if (!targetUrl) return;
 
-        // If in LIVE mode and requiring admin key for active or nuclei scan without key
-        if (appMode === 'live' && !isAdmin && (scanType === 'active' || scanType === 'nuclei')) {
-            setShowKeyModal(true);
-            return;
-        }
-
-        setScanStatus({ status: 'starting', progress: 0 });
-        setLogs([]);
-        setResults(null);
-        setCoverage(null);
-        setTriage(null);
-
-        if (appMode === 'demo') {
-            runDemoSimulationScan();
-            return;
-        }
-
         addLog(`Iniciando Scan Live (${scanType}) em: ${targetUrl}`);
 
         try {
@@ -165,125 +148,16 @@ export default function ScansPage() {
                 addLog(`Erro ao iniciar: ${data.message}`);
                 setScanStatus(null);
             }
-        } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : 'erro desconhecido';
-            addLog(`Erro de conexão: ${message}`);
+        } catch (error: any) {
+            const message = error.response?.data?.detail || error.message || 'erro desconhecido';
+            addLog(`Erro: ${message}`);
+            if (error.response?.status === 403) {
+                alert(error.response.data.detail);
+            }
             setScanStatus(null);
         }
     };
 
-    // Interactive Demo Scan Simulation for visitors
-    const runDemoSimulationScan = () => {
-        setScanStatus({ status: 'scanning', progress: 5 });
-        addLog(`${t('demoLogStarting')} (${scanType.toUpperCase()}) - ${targetUrl}...`);
-
-        const steps = [
-            { pct: 20, log: t('demoLogMapping') },
-            { pct: 45, log: scanType === 'nuclei' ? t('demoLogNuclei') : t('demoLogSpider') },
-            { pct: 70, log: t('demoLogSignatures') },
-            { pct: 90, log: t('demoLogCorrelating') },
-            { pct: 100, log: t('demoLogSuccess') },
-        ];
-
-        let stepIndex = 0;
-        const interval = setInterval(() => {
-            if (stepIndex < steps.length) {
-                const step = steps[stepIndex];
-                setScanStatus({ status: step.pct === 100 ? 'completed' : 'scanning', progress: step.pct });
-                addLog(`[DEMO SIMULATION] ${step.log}`);
-                stepIndex++;
-            } else {
-                clearInterval(interval);
-                generateDemoResults();
-            }
-        }, 1200);
-    };
-
-    const generateDemoResults = () => {
-        const mockAlerts: ScanAlert[] = [
-            {
-                alert: 'HTTP Missing Security Headers',
-                risk: 'Medium',
-                confidence: 'High',
-                description: t('demoAlert1Desc'),
-                method: 'GET',
-                url: targetUrl,
-                sourceid: scanType === 'nuclei' ? 'nuclei' : 'zap',
-                remediations: [{
-                    title: t('demoAlert1Title'),
-                    category: 'Header Configuration',
-                    confidence: 'High',
-                    evidence: 'GET ' + targetUrl,
-                    recommendation: t('demoAlert1Rec'),
-                    report_text: t('demoAlert1Report')
-                }]
-            },
-            {
-                alert: 'TLS Version - Deprecated Protocol Check',
-                risk: 'Low',
-                confidence: 'Medium',
-                description: t('demoAlert2Desc'),
-                method: 'GET',
-                url: targetUrl,
-                sourceid: 'nuclei',
-                remediations: [{
-                    title: t('demoAlert2Title'),
-                    category: 'TLS Hardening',
-                    confidence: 'High',
-                    evidence: 'TLS 1.2 / TLS 1.3 Active',
-                    recommendation: t('demoAlert2Rec'),
-                    report_text: t('demoAlert2Report')
-                }]
-            },
-            {
-                alert: 'Cross-Site Scripting (Reflected Candidate)',
-                risk: scanType === 'active' ? 'High' : 'Medium',
-                confidence: 'Medium',
-                description: t('demoAlert3Desc'),
-                method: 'GET',
-                url: `${targetUrl}/?q=%3Cscript%3Ealert(1)%3C/script%3E`,
-                sourceid: 'zap',
-                remediations: [{
-                    title: t('demoAlert3Title'),
-                    category: 'Input Validation',
-                    confidence: 'High',
-                    evidence: 'Param: q',
-                    recommendation: t('demoAlert3Rec'),
-                    report_text: t('demoAlert3Report')
-                }]
-            }
-        ];
-
-        const mockCoverage: CoverageItem[] = [
-            { name: t('demoCov1'), status: 'pass', cwe: 'CWE-295' },
-            { name: t('demoCov2'), status: 'fail', cwe: 'CWE-1021' },
-            { name: t('demoCov3'), status: 'fail', cwe: 'CWE-79' },
-            { name: 'Strict-Transport-Security (HSTS)', status: 'pass', cwe: 'CWE-523' },
-        ];
-
-        const mockTriage: ScanTriage = {
-            total_alerts: mockAlerts.length,
-            analyst_note: t('demoAnalystNote'),
-            risk_groups: [
-                { root_cause: t('demoTriage1'), count: 2, highest_severity: 'Medium', next_step: t('demoTriage1Next') },
-                { root_cause: t('demoTriage2'), count: 1, highest_severity: 'High', next_step: t('demoTriage2Next') }
-            ]
-        };
-
-        setResults(mockAlerts);
-        setCoverage(mockCoverage);
-        setTriage(mockTriage);
-
-        // Save to demo history
-        const historyItem = {
-            target_url: targetUrl,
-            scan_type: scanType,
-            total_alerts: mockAlerts.length,
-            alerts: mockAlerts
-        };
-        saveDemoScanHistory(historyItem);
-        loadHistory('demo');
-    };
 
     const pollStatus = async (type: string, id: string) => {
         const interval = setInterval(async () => {
@@ -514,11 +388,7 @@ export default function ScansPage() {
                                         type="button"
                                         title={!isAdmin && appMode === 'live' ? t('masterKeyTooltip') : ''}
                                         onClick={() => {
-                                            if (appMode === 'live' && !isAdmin) {
-                                                setShowKeyModal(true);
-                                            } else {
-                                                setScanType('active');
-                                            }
+                                            setScanType('active');
                                         }}
                                         className={`p-3 rounded border text-sm font-bold transition-colors text-left relative ${scanType === 'active'
                                             ? 'bg-red-500/20 border-red-500 text-red-500'
@@ -527,7 +397,7 @@ export default function ScansPage() {
                                     >
                                         {t('activeIntrusive')}
                                         <span className="block text-[10px] font-normal opacity-70 mt-1">
-                                            {appMode === 'live' && !isAdmin ? 'Requer Master Key' : t('simulatedAttacks')}
+                                            {t('simulatedAttacks')}
                                         </span>
                                     </button>
                                 </div>

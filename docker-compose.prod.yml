@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-cyberadmin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-securepassword}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
       POSTGRES_DB: ${POSTGRES_DB:-cyberintel}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -61,7 +61,7 @@ services:
     container_name: cyber_backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cyberadmin}:${POSTGRES_PASSWORD:-securepassword}@db:5432/${POSTGRES_DB:-cyberintel}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cyberadmin}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@db:5432/${POSTGRES_DB:-cyberintel}
       REDIS_URL: redis://redis:6379/0
       ZAP_URL: http://zap:8080
       ADMIN_API_KEY: ${ADMIN_API_KEY}

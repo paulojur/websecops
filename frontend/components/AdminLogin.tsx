@@ -106,7 +106,7 @@ export default function AdminLogin() {
                         ) : (
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <p className="text-gray-400 text-sm mb-4">
-                                    Visitantes só têm acesso ao Demo Mode para proteger a infraestrutura. Insira a Master API Key para desbloquear.
+                                    Visitantes só podem auditar alvos educacionais pré-aprovados (ex: demo.testfire.net). Insira a Master Key para auditar qualquer domínio livremente.
                                 </p>
                                 <div>
                                     <input

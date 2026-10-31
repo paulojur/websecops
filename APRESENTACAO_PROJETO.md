@@ -1,83 +1,93 @@
-# 🛡️ WebSecOps Dashboard: Documentação Executiva
+# 🛡️ WebSecOps Dashboard: Documentação Executiva e Funcional
+
 ## Visão Geral e Arquitetura do Sistema
 
 ### 1. O Que É o Projeto? (Conceito)
-O **WebSecOps** é uma plataforma centralizada de **Monitoramento e Inteligência em Cibersegurança**. 
+O **WebSecOps** é uma plataforma centralizada de **Monitoramento e Inteligência em Cibersegurança** (AppSec) e testes DAST (*Dynamic Application Security Testing*). 
 
-O objetivo do sistema é automatizar a vigilância da segurança de aplicações web protegidas. Em vez de depender de verificações manuais esporádicas, a plataforma oferece um painel em tempo real que:
-1.  **Identifica** as tecnologias usadas pelos seus sites.
-2.  **Cruza** essas informações com bancos de dados globais de falhas de segurança.
-3.  **Monitora** notícias recentes sobre ameaças cibernéticas.
-4.  **Alerta** visualmente sobre riscos críticos antes que sejam explorados.
+O objetivo do sistema é automatizar a vigilância da segurança de aplicações web protegidas. Mais do que uma ferramenta funcional, o WebSecOps foi construído como um **Showcase Interativo (Portfólio)** para demonstrar habilidades avançadas de engenharia de software e segurança. 
+
+Visitantes acessam o site automaticamente em **Demo Mode (Sandbox)**, uma vitrine segura que permite simular a correlação de vulnerabilidades em tempo real sem comprometer o servidor real ou disparar ataques acidentais.
+
+Para analistas de segurança operando em ambiente real, a plataforma oferece um painel que:
+1.  **Identifica** as tecnologias (Tech-Stack) usadas pelos seus sites.
+2.  **Cruza** essas informações com bancos de dados globais (NVD) para identificar vulnerabilidades conhecidas (CVEs).
+3.  **Realiza** simulações ativas de ataques (DAST) usando motores como OWASP ZAP e Nuclei.
+4.  **Sintetiza** os riscos de forma inteligente através de uma Engine de Remediação interna.
+5.  **Monitora** feeds de notícias recentes sobre ameaças cibernéticas globais.
 
 ---
 
 ### 2. Fluxo de Funcionamento (Como ele opera)
 
-O sistema opera em um ciclo contínuo de três etapas:
+O sistema opera em diferentes níveis de profundidade (Passivo e Ativo):
 
-#### A. Coleta (Input)
-O usuário fornece apenas a URL (endereço) do site que deseja monitorar. O sistema não exige acesso privilegiado (senhas) ao servidor, pois simula a visão de um atacante externo.
+#### A. Coleta Passiva (Tech Stack & Recon)
+O usuário fornece a URL do site. O sistema simula a visão de um atacante externo e analisa silenciosamente os cabeçalhos HTTP (Headers), Cookies e o DOM (HTML) para descobrir tecnologias rodando por trás (ex: React, Nginx, PHP).
 
-#### B. Processamento (Análise)
-Assim que uma URL é inserida, o "motor" do sistema entra em ação:
-*   **Identificação de Tech Stack:** O sistema analisa as respostas do servidor para descobrir o que está rodando por trás (Ex: "Este site usa PHP 7.4 e Servidor Apache").
-*   **Correlação de Vulnerabilidades (CVEs):** Ele consulta sua base de dados interna (sincronizada com o governo americano/NVD) para verificar: *"A versão 7.4 do PHP tem falhas conhecidas?"*.
-*   **Análise de Inteligência:** Paralelamente, robôs (scrapers) varrem feeds de notícias de segurança para trazer os últimos alertas do mercado.
+#### B. Processamento e Priorização (Remediation Engine)
+- **Correlação Direta:** O sistema consulta a base de dados interna de CVEs e verifica se as tecnologias detectadas possuem vulnerabilidades críticas.
+- **Redução de Ruído (Anti-Spam):** Para evitar pânico com milhares de falsos positivos, o backend filtra e prioriza apenas os **Top 5 riscos mais relevantes** para analistas.
+- **Padronização:** A Engine de Remediação traduz jargões técnicos complexos em planos de ação claros, com evidências técnicas, razões de correlação (Alta/Baixa Confiança) e passos imediatos de mitigação, entregues no padrão global de cibersegurança (Inglês).
 
-#### C. Visualização (Output)
-O resultado é apresentado em um Dashboard executivo:
-*   **Score de Risco:** Indicadores visuais (Verde/Amarelo/Vermelho) baseados na gravidade das falhas encontradas.
-*   **Lista de Vulnerabilidades:** Detalhamento técnico de cada falha (ex: "Risco de Injeção de SQL").
-*   **Feed de Notícias:** Atualizações em tempo real sobre o cenário de segurança global.
+#### C. DAST Activo (Live Mode)
+Para usuários autenticados via **Master API Key**, o sistema libera os motores de ataque dinâmicos:
+- **OWASP ZAP (Spider & Active Scan):** Varre rotas invisíveis e injeta *payloads* em campos de formulário para detectar XSS, SQLi, entre outros.
+- **Nuclei:** Executa milhares de templates rápidos (YAML) baseados em vulnerabilidades recentes (*Zero-Days*) para testar se a infraestrutura está exposta.
 
 ---
 
 ### 3. Arquitetura Técnica (Para o Arquiteto explicar)
 
-O projeto é construído sobre uma arquitetura moderna de **Microserviços em Containers**, garantindo modularidade e facilidade de manutenção.
+O projeto é construído sobre uma arquitetura moderna de **Microserviços em Containers (Docker)**, garantindo modularidade, portabilidade e segurança isolada.
 
 #### 🖥️ Frontend (Interface do Usuário)
-*   **Tecnologia:** Next.js (React).
-*   **Papel:** É a camada de apresentação. Responsável por traduzir dados técnicos complexos (JSONs de APIs) em gráficos e tabelas compreensíveis.
-*   **Destaque:** Foco em UX (Experiência do Usuário) com design responsivo e atualizações em tempo real sem recarregar a página.
+*   **Tecnologias:** Next.js, React, TailwindCSS.
+*   **Papel:** Dashboard executivo e interativo. Traduz dados técnicos (JSONs) em componentes visuais, gráficos (Vulnerability Trends) e logs de terminal em tempo real.
+*   **Destaque:** Totalmente Internacionalizado (i18n), permitindo transição fluida entre Português (PT-BR) e Inglês (EN). Implementa um sistema dual: *Demo Mode* (seguro, sem acesso a banco) e *Live Mode* (acesso total via API Key).
 
 #### ⚙️ Backend (API e Regras de Negócio)
 *   **Tecnologia:** Python com FastAPI.
-*   **Papel:** É o núcleo de processamento. Recebe as requisições, orquestra os scanners, processa os dados brutos e decide o que é relevante salvar.
-*   **Destaque:** Alta performance assíncrona, permitindo escanear múltiplos sites e consultar milhares de registros de vulnerabilidades simultaneamente sem travar.
+*   **Papel:** Núcleo de orquestração. Gerencia segurança (Validação Criptográfica de Chaves), despacha tarefas assíncronas de scan (ZAP/Nuclei) e executa as lógicas pesadas de correlação.
+*   **Segurança Embutida (Secure-by-Default):** Proteções ativas contra escalonamento. Caso a Master API Key não seja fornecida no servidor, o sistema gera criptograficamente uma chave temporária bloqueando acessos indevidos.
 
-#### 🗄️ Camada de Dados (Persistência)
-*   **Tecnologia:** PostgreSQL.
-*   **Papel:** Armazenamento relacional robusto. Guarda o histórico de scans, a base completa de CVEs (vulnerabilidades globais) e os perfis dos sites monitorados.
+#### 🗄️ Camada de Dados e Cache
+*   **Tecnologias:** PostgreSQL e Redis.
+*   **Papel:** Armazenamento relacional para histórico de alvos e varreduras (Postgres). Gerenciamento rápido de cache e filas assíncronas para os resultados dos scanners (Redis).
 
-#### 🤖 Módulos de Scan e Inteligência
-*   **Tech Detector:** Módulo próprio em Python que analisa cabeçalhos HTTP e padrões de HTML para "assinar" as tecnologias do site.
-*   **Integração NVD:** Um serviço agendado que baixa diariamente o "National Vulnerability Database", garantindo que o sistema conheça falhas descobertas até o dia anterior.
+#### 🛡️ Infraestrutura e Proxy
+*   **Tecnologia:** Nginx.
+*   **Papel:** Proxy reverso que roteia as chamadas do frontend para os serviços de backend.
+*   **Destaque (Hardening):** Configurado com diretivas como `server_tokens off;` e roteamento restrito, dificultando o *Fingerprinting* do próprio WebSecOps por robôs maliciosos.
 
 ---
 
 ### 4. Diferenciais Estratégicos (Por que usar?)
 
 1.  **Vigilância Ativa vs. Passiva:**
-    *   *Antigo:* Você espera um pentest anual para saber se está seguro.
-    *   *Novo:* O sistema monitora continuamente se a sua tecnologia ficou obsoleta ou perigosa da noite para o dia.
+    Em vez de esperar um relatório de *pentest* anual para saber se está seguro, a empresa audita ativamente e descobre imediatamente quando uma tecnologia fica obsoleta.
 
-2.  **Contexto, não apenas Dados:**
-    *   Muitas ferramentas apenas listam 10.000 problemas. Nosso sistema foca em **vulnerabilidades correlacionadas**: ele só avisa sobre falhas do Apache se o seu site *realmente* usar Apache. Isso reduz drasticamente o ruído e o falso-positivo.
+2.  **Contexto e Inteligência (Menos Ruído):**
+    Muitas ferramentas apenas jogam logs na tela. O *Remediation Engine* do WebSecOps prioriza riscos e cria hipóteses (Baixa vs Alta confiança) baseado em evidências, economizando horas da equipe de SOC (Security Operations Center).
 
-3.  **Independência:**
-    *   Todo o sistema roda em infraestrutura própria (On-Premise ou Nuvem Privada), via Docker. Os dados dos seus sites não passam por terceiros, garantindo total privacidade e controle.
+3.  **Independência e Privacidade (On-Premise):**
+    Todo o sistema roda em infraestrutura própria via Docker Compose. Os dados das varreduras não passam por servidores de terceiros, garantindo total privacidade e controle, protegidos por uma autenticação ponta-a-ponta nativa.
+
+4.  **Showcase e Portfólio Interativo (Demo Mode):**
+    Projetado para impressionar técnica e visualmente. A arquitetura de frontend isolado garante que recrutadores, desenvolvedores ou equipes de venda explorem um "Sandbox" (Demo Mode) seguro e restrito à memória do navegador (Local Storage). Os motores destrutivos ficam trancados na infraestrutura real (Live Mode), acessíveis apenas através de uma Master Key rigorosamente validada no backend.
 
 ---
 
 ### 5. Perguntas Frequentes (FAQ para Apresentação)
 
-*   **"Ele invade o site?"**
-    *   Não. O modo padrão apenas lê informações públicas que o site já expõe (Scan Passivo). Ele não realiza ataques nem derruba serviços.
+*   **"O modo de Correlação (Tech Stack) derruba meu site?"**
+    Não. A primeira varredura é 100% passiva. O sistema não envia *exploits*, apenas mapeia o que é público. O risco de impacto é nulo.
     
-*   **"De onde vêm os dados de falhas?"**
-    *   São fontes oficiais e públicas, principalmente o banco de dados do NIST (Instituto Nacional de Padrões e Tecnologia dos EUA).
+*   **"E o ZAP e o Nuclei? Eles causam impacto?"**
+    Sim. Eles realizam fuzzing e injeções (Scans Ativos). Por isso, no sistema WebSecOps, esses módulos são trancados atrás do painel administrativo e só podem ser executados no modo "LIVE", devendo ser usados estritamente contra aplicações que você tem permissão para auditar.
 
-*   **"Preciso instalar algo no meu servidor?"**
-    *   Não. O sistema é externo (Black Box). Ele avalia o site como um visitante comum veria.
+*   **"Como o sistema protege a si mesmo?"**
+    Toda a interface entre cliente e backend depende da validação de uma Master Key via Headers HTTP, mitigando ataques de quebra de autenticação. Além disso, a comunicação exposta ao exterior é filtrada pelo Nginx (Hardening).
+
+*   **"Como a inteligência é alimentada?"**
+    Robôs internos mantêm uma sincronia contínua de ameaças raspando dados do NVD, HackerNews, OWASP, CISA e Google Security.

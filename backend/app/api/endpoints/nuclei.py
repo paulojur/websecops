@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.services.nuclei_scanner import NucleiScanner
-from app.core.security import verify_api_key
+from app.core.security import verify_api_key, get_optional_api_key, enforce_security
 
 router = APIRouter()
 scanner = NucleiScanner()
@@ -12,18 +12,20 @@ class ScanRequest(BaseModel):
     url: str
 
 @router.post("/scan")
-def start_scan(payload: ScanRequest, api_key: str = Depends(verify_api_key)) -> Any:
+def start_scan(payload: ScanRequest, api_key: str = Depends(get_optional_api_key)) -> Any:
     """
     Start a Nuclei scan on the target URL.
     """
     if not payload.url:
         raise HTTPException(status_code=400, detail="URL is required")
         
+    enforce_security(payload.url, api_key)
+        
     result = scanner.start_scan(payload.url)
     return result
 
 @router.get("/status")
-def check_status(scanId: str, type: str = "nuclei", api_key: str = Depends(verify_api_key)) -> Any:
+def check_status(scanId: str, type: str = "nuclei") -> Any:
     """
     Check the status of a running scan.
     """
@@ -34,7 +36,7 @@ def check_status(scanId: str, type: str = "nuclei", api_key: str = Depends(verif
     return status
 
 @router.get("/results")
-def get_results(scanId: str, api_key: str = Depends(verify_api_key)) -> Any:
+def get_results(scanId: str) -> Any:
     """
     Retrieve results of a completed scan.
     """

@@ -6,27 +6,29 @@ from app.models.models import Target, Vulnerability
 from typing import Dict, Any, Optional
 from app.services.zap_scanner import ZapScanner
 from app.services.remediation_engine import RemediationEngine
-from app.core.security import verify_api_key
+from app.core.security import verify_api_key, get_optional_api_key, enforce_security
 
 router = APIRouter()
 scanner = ZapScanner()
 remediation_engine = RemediationEngine()
 
 @router.post("/spider")
-def start_spider_scan(target_url: str, api_key: str = Depends(verify_api_key)):
+def start_spider_scan(target_url: str, api_key: str = Depends(get_optional_api_key)):
     """
     Starts a Passive Spider Scan (Crawling & Passive Analysis).
     Safe for most targets.
     """
+    enforce_security(target_url, api_key)
     result = scanner.start_spider(target_url)
     return result
 
 @router.post("/active")
-def start_active_scan(target_url: str, api_key: str = Depends(verify_api_key)):
+def start_active_scan(target_url: str, api_key: str = Depends(get_optional_api_key)):
     """
     Starts an Active Vulnerability Scan (Attacking).
     Use with caution.
     """
+    enforce_security(target_url, api_key)
     result = scanner.start_active_scan(target_url)
     return result
 
@@ -122,11 +124,12 @@ from app.models.models import ScanHistory
 import datetime
 
 @router.post("/save-history")
-def save_scan_history(req: SaveHistoryRequest, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
+def save_scan_history(req: SaveHistoryRequest, db: Session = Depends(get_db), api_key: str = Depends(get_optional_api_key)):
     """
     Fetches the current results for a target and saves them into the ScanHistory table.
     Filters to only keep High and Medium severity to save space.
     """
+    enforce_security(req.target_url, api_key)
     target = db.query(Target).filter(Target.url == req.target_url).first()
     if not target:
         raise HTTPException(status_code=404, detail="Target not found in DB")

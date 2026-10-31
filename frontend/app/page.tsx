@@ -70,26 +70,17 @@ export default function Home() {
 
     setLoadingTarget(true);
     try {
-      if (appMode === 'demo') {
-        // Real scan but local storage only
-        const { analyzeTarget } = await import('@/lib/api');
-        const data = await analyzeTarget(newTarget);
-        saveDemoTarget({
-          ...data.target,
-          correlations: data.correlations || [],
-          summary: data.summary || {},
-          hardening: data.hardening || {}
-        });
-      } else {
-        await addTarget(newTarget);
-      }
+      await addTarget(newTarget);
       setNewTarget('');
-      // Refresh list
       const t = appMode === 'demo' ? getDemoTargets() : await getTargets();
       setTargets(t);
       alert(t('targetAddedSuccess'));
-    } catch (error) {
-      alert(t('targetAddError'));
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        alert(error.response.data.detail);
+      } else {
+        alert(t('targetAddError'));
+      }
       console.error(error);
     } finally {
       setLoadingTarget(false);

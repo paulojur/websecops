@@ -10,6 +10,13 @@ venv/
 .env
 .pytest_cache/
 
+# Logs
+logs/
+*.log
+
+# Stray git backups
+.git_backup/
+
 # Node / Frontend
 node_modules/
 .next/

@@ -1,143 +1,149 @@
-# 🛡️ WebSecOps Dashboard - Plataforma de Inteligência de Segurança
+# 🛡️ WebSecOps – Web Application Security Intelligence Platform
 
-![Project Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow?style=flat-square)
+🌐 **English** | [Português (BR)](README.pt-BR.md)
+
+![Status](https://img.shields.io/badge/Status-Active%20Development-yellow?style=flat-square)
 ![Stack](https://img.shields.io/badge/Stack-Next.js%20%7C%20FastAPI%20%7C%20Docker-blue?style=flat-square)
 
-O **WebSecOps** é uma plataforma centralizada para auxiliar times de QA e Segurança no monitoramento contínuo de aplicações web. O sistema atua como um "Radar Passivo", identificando tecnologias, correlacionando vulnerabilidades (CVEs) e trazendo inteligência de ameaças em tempo real.
+**WebSecOps** is a self-hosted platform for continuous web application security monitoring (AppSec) and DAST (*Dynamic Application Security Testing*). It helps QA and security teams understand what their applications are running, which known vulnerabilities apply, and what to fix first.
 
-## 🚀 Funcionalidades Principais
-
-*   **📊 Dashboard Executivo**: Visão unificada com indicadores de risco (Score de Vulnerabilidade, Alertas Críticos).
-*   **🎯 Gestão de Alvos (Targets)**: Gerenciamento centralizado das URLs monitoradas (Aplicações, APIs).
-*   **🕵️‍♂️ Detecção de Tech Stack**: Identificação automática de tecnologias (Servidores, Frameworks, CMS) sem necessidade de acesso privilegiado.
-*   **🚨 Monitoramento de CVEs**: Cruzamento automático das tecnologias detectadas com o banco de dados oficial de vulnerabilidades (NVD/NIST).
-*   **📰 Inteligência de Ameaças**: Feed integrado de notícias de cibersegurança e alertas globais.
-*   **⚡ ZAP Integration (Em Breve)**: Orquestração de scans DAST utilizando OWASP ZAP containerizado.
+It's also built as an **interactive portfolio showcase**. Public visitors get a sandboxed **Demo Mode**, and the real scanning engines stay locked behind an authenticated **Live Mode**.
 
 ---
 
-## 🏗️ Arquitetura do Projeto
+## 🚀 Features
 
-O projeto utiliza uma arquitetura baseada em **Microserviços Containerizados**:
+| Feature | Description |
+| :--- | :--- |
+| 📊 **Executive Dashboard** | Unified risk view: vulnerability score, critical alerts and trends. |
+| 🎯 **Target Management** | Register and track monitored URLs (apps, APIs). |
+| 🕵️ **Passive Tech-Stack Detection** | Fingerprints servers, frameworks and CMSs from HTTP headers, cookies and HTML, without sending any exploits. |
+| 🚨 **CVE Correlation** | Matches detected technologies against the NVD/NIST CVE database. |
+| 🧠 **Remediation Engine** | Prioritizes the top 5 most relevant risks, with confidence level (high/low), evidence and mitigation steps. |
+| ⚡ **Active DAST** | OWASP ZAP (spider + active scan) and Nuclei templates. |
+| 📰 **Threat Intelligence Feed** | Aggregated news and advisories (NVD, CISA, OWASP, HackerNews, Google Security). |
+| 📄 **Report Export** | Scan results exportable as PDF. |
+| 🌍 **i18n** | Full UI in English and Portuguese (PT-BR). |
 
-| Componente | Tecnologia | Função |
+### Demo Mode vs. Live Mode
+
+| | Demo Mode (default) | Live Mode |
 | :--- | :--- | :--- |
-| **Frontend** | **Next.js 14** (React) | Interface do utilizador (Dashboard, Gráficos), renderização Server/Client. |
-| **Backend** | **Python (FastAPI)** | API REST, Orquestração de Scanners, Integração com NVD. |
-| **Database** | **PostgreSQL** | Armazenamento de CVEs, Resultados de Scans e Metadados. |
-| **Cache/Queue** | **Redis** | Filas de processamento para scanners assíncronos. |
-| **Scanner** | **OWASP ZAP** | Engine de varredura ativa de vulnerabilidades web (DAST). |
+| Access | Any visitor | Requires the Master API Key (`X-API-Key` header) |
+| Scan targets | Only a whitelist of intentionally vulnerable test sites (e.g. `demo.testfire.net`, `juice-shop.herokuapp.com`, `scanme.nmap.org`) | Any target |
+| Data | Browser local storage | PostgreSQL |
+
+> [!WARNING]
+> ZAP and Nuclei perform **active** scans (fuzzing, payload injection). Only scan systems you own or are explicitly authorized to test.
 
 ---
 
-## 🛠️ Como Executar (Ambiente de Desenvolvimento)
+## 🏗️ Architecture
 
-### Pré-requisitos
-*   **Docker Desktop** (Com suporte a Linux Containers no Windows)
-*   **Node.js 20+** (Para rodar o Frontend localmente e poupar recursos)
+Containerized services, orchestrated with Docker Compose:
 
-### Passo 1: Iniciar a Infraestrutura (Backend)
-O Backend e os serviços de apoio rodam em containers para garantir isolamento.
+| Component | Technology | Role |
+| :--- | :--- | :--- |
+| **Frontend** | Next.js 16, React 19, TailwindCSS 4 | Dashboard, charts, real-time scan logs. Proxies API calls to the backend. |
+| **Backend** | Python, FastAPI | REST API, scanner orchestration, CVE correlation, API key auth. |
+| **Database** | PostgreSQL 16 | Targets, CVEs, scan history. |
+| **Cache/Queue** | Redis | Cache and async scanner results. |
+| **Scanners** | OWASP ZAP, Nuclei | Active DAST engines. |
+| **Proxy** | Nginx + Let's Encrypt | Reverse proxy, TLS, hardening (`server_tokens off`). |
 
+---
+
+## 🛠️ Running Locally
+
+### Prerequisites
+- **Docker Desktop** (Linux containers)
+- **Node.js 20+** (to run the frontend natively with hot reload)
+
+### 1. Configure environment
 ```bash
-# Na raiz do projeto:
-docker compose up -d db backend redis
+cp .env.example .env
+# Edit .env: set POSTGRES_PASSWORD and ADMIN_API_KEY to strong random values
 ```
 
-### Passo 2: Iniciar o Frontend (Local)
-Para melhor performance de desenvolvimento (Hot-Reload), rodamos o frontend nativamente.
+### 2. Start backend services
+```bash
+docker compose up -d db redis backend
+```
 
+### 3. Start the frontend
 ```bash
 cd frontend
-npm install  # (Apenas na primeira vez)
+npm install
 npm run dev
 ```
 
-> O painel estará acessível em: **[http://localhost:3000](http://localhost:3000)**
+Open **http://localhost:3000**.
+
+### Optional: enable ZAP
+```bash
+docker compose up -d zap
+```
+
+### Tests
+```bash
+cd backend
+pytest
+```
 
 ---
 
-## 🚀 Deploy Simples na DigitalOcean
+## 🚢 Production Deployment
 
-Este projeto pode subir em um único Droplet com Docker. O fluxo mais barato é:
-
-1. Clonar o repositório no droplet.
-2. Copiar `.env.example` para `.env` e ajustar a senha do Postgres.
-3. Subir com `docker compose -f docker-compose.prod.yml up -d --build`.
-
-Exemplo de variáveis:
+A single small VM (e.g. a 2 GB droplet) is enough when ZAP is left off:
 
 ```bash
-cp .env.example .env
-```
+cp .env.example .env   # POSTGRES_PASSWORD is mandatory in production
+docker compose -f docker-compose.prod.yml up -d --build db redis backend frontend nginx
 
-As chamadas da interface passam pelo próprio Next.js, então o frontend não precisa de uma URL pública da API para o caso normal.
-O backend continua acessível na rede interna do Docker e o Next faz o proxy para `api/v1`.
-
-### Perfil Recomendado para Droplet 2GB (sem ZAP)
-
-Para economizar RAM, suba apenas os serviços essenciais:
-
-```bash
-docker compose -f docker-compose.prod.yml up -d --build db redis backend frontend
-```
-
-Quando precisar de scan DAST com ZAP, ative o profile sob demanda:
-
-```bash
+# Enable ZAP on demand
 docker compose -f docker-compose.prod.yml --profile scan up -d zap
 ```
 
-### Checklist Rápido de Verificação
+For HTTPS, run `init-letsencrypt.sh` after pointing your domain to the server.
 
+Health checks:
 ```bash
-# Status dos containers
 docker compose -f docker-compose.prod.yml ps
-
-# Saúde da API
-curl http://SEU_IP_PUBLICO:8001/health
-
-# Frontend
-curl -I http://SEU_IP_PUBLICO:3000
+curl http://localhost:8000/health
 ```
-
-### Se Você Ainda Estiver Em `next dev`
-
-O warning de `Cross origin request detected` é esperado quando o servidor de desenvolvimento é acessado por IP público.
-Se quiser continuar nesse modo, defina `NEXT_ALLOWED_DEV_ORIGINS=http://SEU_IP_PUBLICO:3000` no `.env` antes de subir o frontend.
-
-Para o droplet, o caminho mais estável continua sendo o compose de produção.
 
 ---
 
-## 📂 Estrutura de Pastas
+## 📂 Project Structure
 
 ```
-innovation/
-├── backend/            # API Python (FastAPI)
+WebSecOps/
+├── backend/
 │   ├── app/
-│   │   ├── api/        # Endpoints (Routes)
-│   │   ├── core/       # Configs e DB Connection
-│   │   └── models/     # Modelos SQL (SQLAlchemy)
-│   └── main.py         # Entrypoint da Aplicação
-│
-├── frontend/           # Aplicação Next.js
-│   ├── app/
-│   │   ├── (routes)/   # Páginas (Dashboard, Targets, Vulns)
-│   │   └── components/ # Componentes Reutilizáveis (Sidebar, Cards)
-│   └── lib/            # Integração com API (Axios)
-│
-└── docker-compose.yml  # Orquestração dos Containers
+│   │   ├── api/endpoints/   # targets, vulnerabilities, zap, nuclei, intelligence, auth
+│   │   ├── core/            # config, DB, security (API key, target whitelist)
+│   │   ├── models/          # SQLAlchemy models
+│   │   ├── scrapers/        # NVD and threat-intel scrapers
+│   │   └── services/        # tech detector, ZAP scanner, remediation engine
+│   ├── tests/               # pytest
+│   └── main.py
+├── frontend/
+│   ├── app/                 # routes: dashboard, targets, vulns, scans, intelligence
+│   ├── components/          # AdminLogin, WelcomeModal
+│   └── lib/                 # API client, i18n, PDF export, demo data
+├── nginx/                   # reverse proxy config
+├── docker-compose.yml       # development
+└── docker-compose.prod.yml  # production
 ```
-
-## 🤝 Contribuição (QA Security)
-
-Este projeto serve como ferramenta de apoio para a definição de **Casos de Teste de Segurança**. 
-O fluxo de trabalho sugerido é:
-1.  Cadastrar aplicação alvo no Dashboard.
-2.  Identificar tecnologias vulneráveis alertas pelo sistema.
-3.  Criar testes automatizados específicos no repositório de QA oficial para validar a correção (Patch/Update).
 
 ---
 
-**Desenvolvido com foco em Cyber + Privacy 🔒**
+## 🤝 Suggested QA Security Workflow
+
+1. Register the target application.
+2. Review detected technologies and correlated CVEs.
+3. Write targeted security test cases to validate patches and updates.
+
+---
+
+**Built with a focus on Cyber + Privacy 🔒**
